@@ -1,6 +1,6 @@
 # Helio Events (Full-Stack Platform)
 
-> A state-of-the-art event hosting and discovery platform inspired by **[Luma (lu.ma)](https://luma.com)**. Built with Next.js 14 (App Router), Express.js, TypeScript, PostgreSQL, and Prisma ORM.
+> A state-of-the-art event hosting and discovery platform. Built with Next.js 14 (App Router), Express.js, TypeScript, PostgreSQL, and Prisma ORM.
 
 ---
 
@@ -257,4 +257,4 @@ To inspect and manage the PostgreSQL database using **DBeaver** or any standard 
 
 ## 📄 License
 
-This project is created for educational and development purposes. Inspired by the design and user experience of [Luma](https://lu.ma).
+This project is created for educational and development purposes.
