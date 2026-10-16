@@ -1,0 +1,12 @@
+{
+  "name": "luma-clone-monorepo",
+  "version": "1.0.0",
+  "description": "Full-stack Luma clone with Next.js, Express, Prisma ORM, and PostgreSQL",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "seed": "npm --prefix backend run prisma:seed"
+  }
+}

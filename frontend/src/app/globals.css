@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.font-style-sans {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+.font-style-serif {
+  font-family: 'Playfair Display', Georgia, serif !important;
+}
+
+.font-style-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+.font-style-grotesk {
+  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+}
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 15%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 18%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 18%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 15%;
+    --input: 217 33% 18%;
+    --ring: 224 76% 48%;
+    --radius: 0.75rem;
+  }
+}
+
+body {
+  background-color: #0b0e14;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Helio Events Glassmorphic Cards */
+.helio-card,
+.luma-card {
+  background-color: rgba(22, 27, 34, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 1.25rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.helio-card:hover,
+.luma-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Pill Button */
+.helio-btn,
+.luma-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 600;
+  transition: all 0.15s ease-in-out;
+}
+
+.helio-btn-primary,
+.luma-btn-primary {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.helio-btn-primary:hover,
+.luma-btn-primary:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.helio-btn-secondary,
+.luma-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.helio-btn-secondary:hover,
+.luma-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Timeline vertical line */
+.timeline-line {
+  position: absolute;
+  top: 1rem;
+  bottom: 0;
+  left: 6.5rem;
+  border-left: 2px dashed rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 640px) {
+  .timeline-line {
+    left: 1.25rem;
+  }
+}
+
+/* Ambient Cover Glow */
+.ambient-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 650px;
+  height: 350px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}

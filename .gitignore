@@ -1,0 +1,84 @@
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+.pnp
+.pnp.js
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+*.local
+
+# ==========================================
+# Next.js Build Outputs & Cache
+# ==========================================
+.next/
+out/
+build/
+dist/
+
+# ==========================================
+# TypeScript Cache & Build Info
+# ==========================================
+*.tsbuildinfo
+next-env.d.ts
+
+# ==========================================
+# Logs & Debugging
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================================
+# OS Generated Files
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# IDE & Editor Files
+# ==========================================
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+
+# ==========================================
+# Testing & Code Coverage
+# ==========================================
+coverage/
+.nyc_output/
+
+# ==========================================
+# Database & SQLite Local Dumps
+# ==========================================
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+
+# ==========================================
+# MCP & Local Tool Artifacts
+# ==========================================
+.turbo
+.system_generated/

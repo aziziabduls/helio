@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(cuid())
+  name            String
+  email           String         @unique
+  password        String?
+  avatarUrl       String?
+  bio             String?
+  username        String?        @unique
+  website         String?
+  twitterHandle   String?
+  instagramHandle String?
+  isVerified      Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  events          Event[]
+  calendars       Calendar[]
+  registrations   Registration[]
+}
+
+model Calendar {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  description     String?
+  avatarUrl       String?
+  coverUrl        String?
+  tintColor       String   @default("#2e72e0")
+  subscriberCount Int      @default(0)
+  ownerId         String
+  owner           User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  events          Event[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Event {
+  id              String         @id @default(cuid())
+  slug            String         @unique
+  name            String
+  description     String
+  coverUrl        String
+  coverCardUrl    String?
+  startAt         DateTime
+  endAt           DateTime
+  timezone        String         @default("America/Los_Angeles")
+  locationType    String         @default("offline")
+  address         String?
+  city            String?
+  region          String?
+  country         String?
+  latitude        Float?
+  longitude       Float?
+  virtualUrl      String?
+  visibility      String         @default("public")
+  requireApproval Boolean        @default(false)
+  maxCapacity     Int?
+  category        String[]       @default([])
+  tintColor       String         @default("#668fd4")
+  font            String?        @default("sans")
+  hostId          String
+  host            User           @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  calendarId      String?
+  calendar        Calendar?      @relation(fields: [calendarId], references: [id], onDelete: SetNull)
+  tickets         Ticket[]
+  merchandises    Merchandise[]
+  registrations   Registration[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Ticket {
+  id              String         @id @default(cuid())
+  eventId         String
+  event           Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  type            String         @default("free")
+  price           Int            @default(0)
+  currency        String         @default("USD")
+  capacity        Int?
+  requireApproval Boolean        @default(false)
+  saleStartAt     DateTime?
+  saleEndAt       DateTime?
+  registrations   Registration[]
+  createdAt       DateTime       @default(now())
+}
+
+model Merchandise {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  price       Int      @default(0)
+  currency    String   @default("IDR")
+  imageUrl    String?
+  stock       Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Registration {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketId  String?
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  status    String   @default("APPROVED")
+  qrCode    String?
+  ticketKey String   @unique
+  notes     String?
+  answers   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
