@@ -7,6 +7,8 @@ import categoriesRouter from './routes/categories';
 import eventsRouter from './routes/events';
 import registrationsRouter from './routes/registrations';
 import usersRouter from './routes/users';
+import swaggerUi from 'swagger-ui-express';
+import { openApiSpec } from './docs/openapi';
 import { sendError, sendSuccess } from './utils/response';
 
 dotenv.config();
@@ -60,6 +62,11 @@ app.use('/api/registrations', registrationsRouter);
 app.use('/api/calendars', calendarsRouter);
 app.use('/api', categoriesRouter);
 app.use('/api/users', usersRouter);
+
+// Swagger API Documentation
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+app.get('/api/docs.json', (_req, res) => res.json(openApiSpec));
+app.get('/docs', (_req, res) => res.redirect('/api/docs'));
 
 // 404 fallback
 app.use((_req, res) => {
