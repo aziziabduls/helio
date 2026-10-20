@@ -47,6 +47,7 @@ export default function Navbar() {
     pathname === '/create' ||
     (Boolean(pathname) &&
       pathname !== '/' &&
+      pathname !== '/events' &&
       pathname !== '/discover' &&
       pathname !== '/profile' &&
       pathname !== '/login' &&
@@ -102,8 +103,12 @@ export default function Navbar() {
           {/* Left boundary: directly above "Events" title */}
           <div className="hidden sm:flex items-center gap-4">
             <Link
-              href="/"
-              className="text-[13px] font-semibold text-white/70 hover:text-white transition-colors flex items-center gap-1"
+              href="/events"
+              className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${
+                pathname === '/events'
+                  ? 'text-white'
+                  : 'text-white/70 hover:text-white'
+              }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
               <span>Events</span>
@@ -111,7 +116,11 @@ export default function Navbar() {
 
             <Link
               href="/discover"
-              className="text-[13px] font-semibold text-white/70 hover:text-white transition-colors flex items-center gap-1"
+              className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${
+                pathname === '/discover'
+                  ? 'text-white'
+                  : 'text-white/70 hover:text-white'
+              }`}
             >
               <Compass className="w-3.5 h-3.5" />
               <span>Discover</span>

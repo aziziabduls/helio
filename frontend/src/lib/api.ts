@@ -136,7 +136,11 @@ export async function fetchEvents(params?: {
   if (params?.search) query.append('search', params.search);
 
   const res = await fetch(`${API_BASE}/events?${query.toString()}`, { cache: 'no-store' });
-  return handleResponse<EventItem[]>(res, 'Failed to fetch events');
+  const events = await handleResponse<EventItem[]>(res, 'Failed to fetch events');
+  if (params?.timeframe === 'past') return events;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return events.filter((e) => new Date(e.startAt) >= today);
 }
 
 export async function fetchEventBySlug(slug: string): Promise<EventItem> {

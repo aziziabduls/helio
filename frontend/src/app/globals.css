@@ -267,3 +267,11 @@ html:not(.dark) .luma-card:hover {
   pointer-events: none;
   z-index: 0;
 }
+
+/* Luma Signature Gradient Text */
+.luma-gradient-text {
+  background-image: radial-gradient(circle farthest-corner at 15% 15%, #ab46dd 0%, #f31a7c 36%, #f8712b 51%, #eaab26 77%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

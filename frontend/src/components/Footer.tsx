@@ -12,6 +12,7 @@ export default function Footer() {
   const isEventDetail =
     pathname &&
     pathname !== '/' &&
+    pathname !== '/events' &&
     pathname !== '/discover' &&
     pathname !== '/profile' &&
     pathname !== '/create' &&
