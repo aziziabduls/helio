@@ -88,7 +88,7 @@ graph TD
 ## 📁 Project Structure
 
 ```text
-luma-clone/
+helio/
 ├── .gitignore                   # Monorepo gitignore
 ├── README.md                    # Platform documentation
 ├── package.json                 # Monorepo root scripts
@@ -150,8 +150,8 @@ luma-clone/
 
 ```bash
 # Clone the repository
-git clone <repository-url> luma-clone
-cd luma-clone
+git clone https://github.com/aziziabduls/helio.git
+cd helio
 
 # Install root, backend, and frontend dependencies
 npm install
