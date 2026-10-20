@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Calendar as CalendarIcon, Compass, LogOut, Plus, User as UserIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Compass, LogOut, Monitor, Moon, Plus, Sun, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,36 @@ export default function Navbar() {
   const { user, openAuthModal, logout } = useAuth();
   const [time, setTime] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
+
+  useEffect(() => {
+    const saved = (localStorage.getItem('theme') as 'system' | 'light' | 'dark') || 'system';
+    setTheme(saved);
+    applyTheme(saved);
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleMediaChange = () => {
+      if ((localStorage.getItem('theme') || 'system') === 'system') {
+        applyTheme('system');
+      }
+    };
+    media.addEventListener('change', handleMediaChange);
+    return () => media.removeEventListener('change', handleMediaChange);
+  }, []);
+
+  const applyTheme = (t: 'system' | 'light' | 'dark') => {
+    const isDark =
+      t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', isDark);
+    document.documentElement.classList.toggle('light', !isDark);
+  };
+
+  const toggleTheme = () => {
+    const next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
+    setTheme(next);
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  };
 
   const isEventDetail =
     pathname === '/create' ||
@@ -46,14 +76,14 @@ export default function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full backdrop-blur-md transition-colors duration-200 ${isEventDetail
-        ? 'border-white/[0.06]'
+      className={`navbar-root sticky top-0 z-50 w-full backdrop-blur-md transition-colors duration-200 ${isEventDetail
+        ? 'is-event-detail border-white/[0.06]'
         : 'border-white/[0.08]'
         }`}
       style={{
         backgroundColor: isEventDetail
-          ? 'color-mix(in srgb, var(--event-page-bg, #0b0e14) 80%, transparent)'
-          : 'rgba(11, 14, 20, 0.8)',
+          ? 'color-mix(in srgb, var(--event-page-bg, var(--bg-color)) 80%, transparent)'
+          : 'var(--header-bg)',
       }}
     >
       <div className="w-full px-4 sm:px-6 h-11 flex items-center justify-between xl:grid xl:grid-cols-[1fr_minmax(0,56rem)_1fr]">
@@ -118,6 +148,21 @@ export default function Navbar() {
               <span className="hidden sm:inline">Create Event</span>
               <span className="sm:hidden">Host</span>
             </Link>
+          )}
+
+          {/* Theme switcher (hidden on event detail) */}
+          {!isEventDetail && (
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={`Theme: ${theme}. Click to change theme.`}
+              title={`Theme: ${theme}`}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors focus:outline-none flex-shrink-0"
+            >
+              {theme === 'system' && <Monitor className="w-4 h-4" />}
+              {theme === 'light' && <Sun className="w-4 h-4" />}
+              {theme === 'dark' && <Moon className="w-4 h-4" />}
+            </button>
           )}
 
           {/* User Session Management */}

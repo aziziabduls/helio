@@ -21,7 +21,7 @@ export default function TimelineSection({ dateStr, events, isLast = false }: Tim
     <div className="relative flex scroll-mt-20 justify-end gap-2 w-full pb-8">
       {/* Desktop Sticky Date Column (timeline-component-05 pattern) */}
       <div className="sticky top-24 flex w-32 md:w-36 flex-col items-end gap-1.5 self-start pb-4 max-md:hidden flex-shrink-0">
-        <Badge className="flex w-auto justify-end rounded-md text-xs font-bold uppercase tracking-wider bg-white/[0.08] hover:bg-white/[0.12] text-white/90 border border-white/10 px-2.5 py-1">
+        <Badge className="flex w-auto justify-end rounded-md text-xs font-bold uppercase tracking-wider bg-white/[0.08] hover:bg-white/[0.12] text-black/90 dark:text-white/90 border border-white/10 px-2.5 py-1">
           {formattedDate}
         </Badge>
         {weekday && (

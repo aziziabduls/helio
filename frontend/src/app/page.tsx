@@ -90,8 +90,8 @@ function HomePageContent() {
             type="button"
             onClick={() => setTimeframe('upcoming')}
             className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${timeframe === 'upcoming'
-                ? 'bg-white text-black font-semibold shadow-sm'
-                : 'text-white/60 hover:text-white'
+              ? 'bg-white text-black font-semibold shadow-sm'
+              : 'text-white/60 hover:text-white'
               }`}
           >
             Upcoming
@@ -100,8 +100,8 @@ function HomePageContent() {
             type="button"
             onClick={() => setTimeframe('past')}
             className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${timeframe === 'past'
-                ? 'bg-white text-black font-semibold shadow-sm'
-                : 'text-white/60 hover:text-white'
+              ? 'bg-white text-black font-semibold shadow-sm'
+              : 'text-white/60 hover:text-white'
               }`}
           >
             Past
@@ -118,8 +118,8 @@ function HomePageContent() {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all border ${selectedCategory === cat
-                  ? 'bg-blue-600 border-blue-500 text-white font-medium'
-                  : 'bg-white/[0.03] border-white/[0.06] text-white/60 hover:text-white hover:border-white/20'
+                ? 'luma-btn luma-btn-primary font-medium'
+                : 'bg-white/[0.03] border-white/[0.06] text-white/60 hover:text-white hover:border-white/20'
                 }`}
             >
               {cat}

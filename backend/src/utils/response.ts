@@ -7,7 +7,8 @@ export type ErrorCode =
   | 'FORBIDDEN'
   | 'CONFLICT'
   | 'SERVER_ERROR'
-  | 'EVENT_ONGOING';
+  | 'EVENT_ONGOING'
+  | 'EVENT_ENDED';
 
 export interface MetaData {
   page: number;

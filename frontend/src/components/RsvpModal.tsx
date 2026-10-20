@@ -7,7 +7,7 @@ import {
   Calendar as CalendarIcon,
   ArrowRight,
 } from 'lucide-react';
-import { EventItem, registerForEvent, Registration } from '@/lib/api';
+import { EventItem, registerForEvent, Registration, Ticket } from '@/lib/api';
 import { toast } from '@/components/ui/sonner';
 import {
   Dialog,
@@ -37,6 +37,65 @@ interface RsvpModalProps {
   selectedMerchandise?: SelectedMerchItem[];
 }
 
+function getTicketSaleStatus(ticket: Ticket, isEventPast: boolean) {
+  if (isEventPast) {
+    return {
+      status: 'ended' as const,
+      badgeText: 'Event Ended',
+      badgeClass: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
+      canPurchase: false,
+    };
+  }
+
+  const now = new Date();
+  const saleStart = ticket.saleStartAt ? new Date(ticket.saleStartAt) : null;
+  const saleEnd = ticket.saleEndAt ? new Date(ticket.saleEndAt) : null;
+
+  if (saleStart && !isNaN(saleStart.getTime()) && now < saleStart) {
+    const formatted = saleStart.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    return {
+      status: 'upcoming' as const,
+      badgeText: `Sale opens ${formatted}`,
+      badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+      canPurchase: false,
+    };
+  }
+
+  if (saleEnd && !isNaN(saleEnd.getTime()) && now > saleEnd) {
+    return {
+      status: 'ended' as const,
+      badgeText: 'Sale Ended',
+      badgeClass: 'bg-red-500/20 text-red-300 border-red-500/30',
+      canPurchase: false,
+    };
+  }
+
+  if (saleEnd && !isNaN(saleEnd.getTime())) {
+    const formatted = saleEnd.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+    return {
+      status: 'presale' as const,
+      badgeText: `Presale ends ${formatted}`,
+      badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      canPurchase: true,
+    };
+  }
+
+  return {
+    status: 'open' as const,
+    badgeText: null,
+    badgeClass: '',
+    canPurchase: true,
+  };
+}
+
 export default function RsvpModal({
   event,
   isOpen,
@@ -47,8 +106,14 @@ export default function RsvpModal({
 }: RsvpModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const isPast = event.endAt ? new Date() > new Date(event.endAt) : false;
+
+  const firstPurchasable =
+    event.tickets.find((t) => getTicketSaleStatus(t, isPast).canPurchase) ||
+    event.tickets[0];
+
   const [selectedTicketId, setSelectedTicketId] = useState<string>(
-    initialTicketId || event.tickets[0]?.id || ''
+    initialTicketId || firstPurchasable?.id || ''
   );
   const [projectIdea, setProjectIdea] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,12 +123,13 @@ export default function RsvpModal({
   React.useEffect(() => {
     if (initialTicketId) {
       setSelectedTicketId(initialTicketId);
-    } else if (event.tickets[0]?.id) {
-      setSelectedTicketId(event.tickets[0].id);
+    } else if (firstPurchasable?.id) {
+      setSelectedTicketId(firstPurchasable.id);
     }
-  }, [initialTicketId, event]);
+  }, [initialTicketId, firstPurchasable?.id]);
 
-  const activeTicket = event.tickets.find((t) => t.id === selectedTicketId) || event.tickets[0];
+  const activeTicket = event.tickets.find((t) => t.id === selectedTicketId) || firstPurchasable;
+  const activeTicketSaleStatus = activeTicket ? getTicketSaleStatus(activeTicket, isPast) : null;
 
   const merchTotal = selectedMerchandise.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const ticketPrice = activeTicket?.price || 0;
@@ -72,6 +138,14 @@ export default function RsvpModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPast) {
+      toast.error('This event has ended. Registrations are closed.');
+      return;
+    }
+    if (activeTicketSaleStatus && !activeTicketSaleStatus.canPurchase) {
+      toast.error(activeTicketSaleStatus.badgeText || 'This ticket is currently unavailable for purchase.');
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
 
@@ -230,49 +304,79 @@ export default function RsvpModal({
                     Select Ticket Type
                   </label>
                   <div className="space-y-2">
-                    {event.tickets.map((t) => (
-                      <label
-                        key={t.id}
-                        className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                          selectedTicketId === t.id
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-white/[0.08] hover:border-white/20 bg-white/[0.02]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <input
-                            type="radio"
-                            name="ticket"
-                            value={t.id}
-                            checked={selectedTicketId === t.id}
-                            onChange={() => setSelectedTicketId(t.id)}
-                            className="text-blue-500 focus:ring-0"
-                          />
-                          <div>
-                            <div className="text-xs sm:text-sm font-semibold text-white">
-                              {t.name}
+                    {event.tickets.map((t) => {
+                      const saleStatus = getTicketSaleStatus(t, isPast);
+                      const isSelected = selectedTicketId === t.id;
+
+                      return (
+                        <label
+                          key={t.id}
+                          className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                            !saleStatus.canPurchase
+                              ? 'opacity-50 border-white/[0.05] bg-black/40 cursor-not-allowed'
+                              : isSelected
+                              ? 'border-blue-500 bg-blue-500/10 cursor-pointer'
+                              : 'border-white/[0.08] hover:border-white/20 bg-white/[0.02] cursor-pointer'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="radio"
+                              name="ticket"
+                              value={t.id}
+                              disabled={!saleStatus.canPurchase}
+                              checked={isSelected}
+                              onChange={() => {
+                                if (saleStatus.canPurchase) {
+                                  setSelectedTicketId(t.id);
+                                }
+                              }}
+                              className="text-blue-500 focus:ring-0 disabled:opacity-40"
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs sm:text-sm font-semibold text-white truncate">
+                                  {t.name}
+                                </span>
+                                {saleStatus.badgeText && (
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${saleStatus.badgeClass}`}
+                                  >
+                                    {saleStatus.badgeText}
+                                  </span>
+                                )}
+                              </div>
+                              {t.description && (
+                                <div className="text-[11px] text-white/50 truncate">{t.description}</div>
+                              )}
                             </div>
-                            {t.description && (
-                              <div className="text-[11px] text-white/50">{t.description}</div>
-                            )}
                           </div>
-                        </div>
-                        <span className="text-xs font-bold text-white/80">
-                          {t.price === 0
-                            ? 'Free'
-                            : t.currency === 'IDR'
-                            ? `Rp ${Number(t.price).toLocaleString()}`
-                            : `$${Number(t.price).toLocaleString()}`}
-                        </span>
-                      </label>
-                    ))}
+                          <span className="text-xs font-bold text-white/80 flex-shrink-0 ml-2">
+                            {t.price === 0
+                              ? 'Free'
+                              : t.currency === 'IDR'
+                              ? `Rp ${Number(t.price).toLocaleString()}`
+                              : `$${Number(t.price).toLocaleString()}`}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
                 activeTicket && (
                   <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-between">
                     <div>
-                      <div className="text-xs text-white/40">Selected Ticket</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs text-white/40">Selected Ticket</div>
+                        {activeTicketSaleStatus?.badgeText && (
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${activeTicketSaleStatus.badgeClass}`}
+                          >
+                            {activeTicketSaleStatus.badgeText}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-sm font-semibold text-white">{activeTicket.name}</div>
                     </div>
                     <span className="text-xs font-bold text-white/90">
@@ -367,11 +471,19 @@ export default function RsvpModal({
               <div className="pt-2">
                 <Button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={
+                    isSubmitting ||
+                    isPast ||
+                    (activeTicketSaleStatus ? !activeTicketSaleStatus.canPurchase : false)
+                  }
                   className="w-full py-5 text-sm font-bold flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     'Processing...'
+                  ) : isPast ? (
+                    <span>Event Ended</span>
+                  ) : activeTicketSaleStatus && !activeTicketSaleStatus.canPurchase ? (
+                    <span>{activeTicketSaleStatus.badgeText || 'Ticket Unavailable'}</span>
                   ) : event.requireApproval ? (
                     <>
                       <span>Request to Join</span>

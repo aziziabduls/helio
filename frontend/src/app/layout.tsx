@@ -26,8 +26,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${plusJakarta.variable}`}>
-      <body className="bg-[#0b0e14] text-white min-h-screen flex flex-col font-sans selection:bg-blue-500 selection:text-white antialiased">
+    <html lang="en" className={plusJakarta.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){document.documentElement.classList.add('dark');document.documentElement.classList.remove('light');}else{document.documentElement.classList.remove('dark');document.documentElement.classList.add('light');}}catch(e){}})()`,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col font-sans selection:bg-blue-500 selection:text-white antialiased">
         <AuthProvider>
           <Navbar />
           <main className="flex-1 font-sans">

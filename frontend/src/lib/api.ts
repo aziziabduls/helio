@@ -249,14 +249,31 @@ export async function updateCalendar(
   return handleResponse<Calendar & { owner?: Host }>(res, 'Failed to update calendar');
 }
 
-export async function fetchCategories(): Promise<{ name: string; icon: string; count: string | number }[]> {
-  const res = await fetch(`${API_BASE}/categories`, { cache: 'no-store' });
-  return handleResponse<{ name: string; icon: string; count: string | number }[]>(res, 'Failed to fetch categories');
+export interface CategoryItem {
+  name: string;
+  slug?: string;
+  icon: string;
+  count: string | number;
 }
 
-export async function fetchCities(): Promise<{ name: string; region: string; icon: string; count: number }[]> {
+export interface CityItem {
+  name: string;
+  slug?: string;
+  region?: string;
+  continent?: string;
+  icon: string;
+  count: number;
+  tint?: string;
+}
+
+export async function fetchCategories(): Promise<CategoryItem[]> {
+  const res = await fetch(`${API_BASE}/categories`, { cache: 'no-store' });
+  return handleResponse<CategoryItem[]>(res, 'Failed to fetch categories');
+}
+
+export async function fetchCities(): Promise<CityItem[]> {
   const res = await fetch(`${API_BASE}/cities`, { cache: 'no-store' });
-  return handleResponse<{ name: string; region: string; icon: string; count: number }[]>(res, 'Failed to fetch cities');
+  return handleResponse<CityItem[]>(res, 'Failed to fetch cities');
 }
 
 export async function fetchGuests(eventId: string): Promise<Registration[]> {

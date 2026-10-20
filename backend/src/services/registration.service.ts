@@ -37,6 +37,11 @@ export class RegistrationService {
       throw new AppError('Event not found', 404, 'NOT_FOUND');
     }
 
+    // Check if event has ended
+    if (event.endAt && new Date() > new Date(event.endAt)) {
+      throw new AppError('This event has already ended. Registrations are closed.', 400, 'EVENT_ENDED');
+    }
+
     // Check capacity
     if (event.maxCapacity && event._count.registrations >= event.maxCapacity) {
       throw new AppError('Event is at full capacity', 409, 'CONFLICT');

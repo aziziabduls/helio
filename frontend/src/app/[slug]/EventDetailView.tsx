@@ -157,9 +157,24 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
     const prevBodyBg = document.body.style.backgroundColor;
     document.body.style.backgroundColor = pageBg;
 
+    // Enforce dark mode on event detail view (including navbar & footer)
+    const wasDark = document.documentElement.classList.contains('dark');
+    document.documentElement.classList.add('dark', 'event-detail-active');
+    document.documentElement.classList.remove('light');
+
     return () => {
       document.documentElement.style.removeProperty('--event-page-bg');
       document.body.style.backgroundColor = prevBodyBg;
+      document.documentElement.classList.remove('event-detail-active');
+      if (!wasDark) {
+        const savedTheme = localStorage.getItem('theme');
+        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const shouldBeDark = savedTheme === 'dark' || (savedTheme === 'system' && isSystemDark);
+        if (!shouldBeDark) {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        }
+      }
     };
   }, [pageBg]);
 
@@ -181,8 +196,21 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
       ];
 
   const now = new Date();
+  const startDate = new Date(event.startAt);
+  const endDate = new Date(event.endAt);
+  const isOngoing = now >= startDate && now <= endDate;
+  const isPast = now > endDate;
 
   function getTicketSaleStatus(ticket: Ticket) {
+    if (isPast) {
+      return {
+        status: 'ended' as const,
+        badgeText: 'Event Ended',
+        badgeClass: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
+        canPurchase: false,
+      };
+    }
+
     const saleStart = ticket.saleStartAt ? new Date(ticket.saleStartAt) : null;
     const saleEnd = ticket.saleEndAt ? new Date(ticket.saleEndAt) : null;
 
@@ -306,10 +334,6 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
     )
   );
 
-  const startDate = new Date(event.startAt);
-  const endDate = new Date(event.endAt);
-  const isOngoing = now >= startDate && now <= endDate;
-  const isPast = now > endDate;
   const canEdit = isOwner && !isOngoing;
 
   const fontClass =
@@ -329,7 +353,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
 
   return (
     <div
-      className={`min-h-screen text-white antialiased selection:bg-white/20 ${fontClass}`}
+      className={`dark event-detail-view min-h-screen text-white antialiased selection:bg-white/20 ${fontClass}`}
       style={{ backgroundColor: pageBg }}
     >
       {/* Main Container - fully responsive mobile and desktop */}
@@ -998,25 +1022,29 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
               {/* Welcome text & Clean Solid White Button */}
               <div className="px-5 pb-5 space-y-3">
                 <p className="text-xs text-white/90 font-medium">
-                  Welcome! To join the event, please select a ticket and register below.
+                  {isPast
+                    ? 'This event has ended. Registrations are closed.'
+                    : 'Welcome! To join the event, please select a ticket and register below.'}
                 </p>
 
                 <button
                   type="button"
-                  disabled={!selectedTicketSaleStatus.canPurchase}
+                  disabled={isPast || !selectedTicketSaleStatus.canPurchase}
                   onClick={() => setIsRsvpOpen(true)}
-                  className={`w-full py-3.5 rounded-xl font-extrabold text-sm sm:text-base transition-all shadow-md active:scale-[0.99] ${selectedTicketSaleStatus.canPurchase
+                  className={`w-full py-3.5 rounded-xl font-extrabold text-sm sm:text-base transition-all shadow-md active:scale-[0.99] ${!isPast && selectedTicketSaleStatus.canPurchase
                     ? 'bg-white hover:bg-white/90 text-black cursor-pointer'
                     : 'bg-white/10 text-white/40 cursor-not-allowed border border-white/10'
                     }`}
                 >
-                  {!selectedTicketSaleStatus.canPurchase
-                    ? (selectedTicketSaleStatus.badgeText || 'Ticket Unavailable')
-                    : selectedTicket?.requireApproval || event.requireApproval
-                      ? 'Request to Join'
-                      : totalCost > 0
-                        ? `Register & Pay ${currencyDisplay} ${totalCost.toLocaleString()}`
-                        : 'Register Now'}
+                  {isPast
+                    ? 'Event Ended'
+                    : !selectedTicketSaleStatus.canPurchase
+                      ? (selectedTicketSaleStatus.badgeText || 'Ticket Unavailable')
+                      : selectedTicket?.requireApproval || event.requireApproval
+                        ? 'Request to Join'
+                        : totalCost > 0
+                          ? `Register & Pay ${currencyDisplay} ${totalCost.toLocaleString()}`
+                          : 'Register Now'}
                 </button>
 
                 {isOwner && (
@@ -1155,7 +1183,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
       </div>
 
       {/* ================= EXACT FOOTER FROM SCREENSHOT (WITHOUT PRICING) ================= */}
-      <footer className="border-t border-white/[0.08] mt-16 py-6 text-xs text-white/50">
+      <footer className="border-t border-white/[0.08] mt-16 py-6 text-xs text-white/50 event-detail-footer">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Left: Brand Star & Links (No Pricing) */}
           <div className="flex items-center gap-5">

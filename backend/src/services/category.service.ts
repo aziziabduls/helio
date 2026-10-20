@@ -1,4 +1,5 @@
 import { prisma } from '../db';
+import type { Category, City } from '@prisma/client';
 
 const CATEGORY_METADATA: Record<string, { icon: string; countFallback: string }> = {
   Tech: {
@@ -66,6 +67,22 @@ const CITY_METADATA = [
 
 export class CategoryService {
   async getCategories() {
+    try {
+      const dbCategories = await prisma.category.findMany({
+        orderBy: { name: 'asc' },
+      });
+      if (dbCategories && dbCategories.length > 0) {
+        return dbCategories.map((c: Category) => ({
+          name: c.name,
+          slug: c.slug,
+          icon: c.icon,
+          count: c.count || '0',
+        }));
+      }
+    } catch (e) {
+      // Fallback if DB table not yet seeded
+    }
+
     const events = await prisma.event.findMany({
       select: { category: true },
     });
@@ -91,8 +108,28 @@ export class CategoryService {
   }
 
   async getCities() {
+    try {
+      const dbCities = await prisma.city.findMany({
+        orderBy: { count: 'desc' },
+      });
+      if (dbCities && dbCities.length > 0) {
+        return dbCities.map((c: City) => ({
+          name: c.name,
+          slug: c.slug,
+          region: c.continent,
+          continent: c.continent,
+          icon: c.icon,
+          count: c.count,
+          tint: c.tint,
+        }));
+      }
+    } catch (e) {
+      // Fallback
+    }
+
     return CITY_METADATA;
   }
 }
 
 export const categoryService = new CategoryService();
+

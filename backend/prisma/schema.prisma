@@ -126,3 +126,26 @@ model Registration {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Category {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String   @unique
+  count     String?
+  icon      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model City {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  continent String
+  count     Int      @default(0)
+  icon      String
+  tint      String   @default("#3b82f6")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
