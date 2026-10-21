@@ -161,7 +161,7 @@ export default function DiscoverPage() {
                   setPopularEvents(allData);
                 }
               })
-              .catch(() => {});
+              .catch(() => { });
           }
         }
       })
@@ -199,7 +199,7 @@ export default function DiscoverPage() {
           </div>
 
           <Link
-            href={`/?city=${encodeURIComponent(selectedCity)}`}
+            href={`/city?city=${encodeURIComponent(selectedCity)}`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] text-xs font-semibold text-white transition-colors flex-shrink-0"
           >
             <span>View All</span>
@@ -256,7 +256,7 @@ export default function DiscoverPage() {
           {categories.map((cat) => (
             <Link
               key={cat.slug || cat.name}
-              href={`/?category=${encodeURIComponent(cat.name)}`}
+              href={`/events?category=${encodeURIComponent(cat.name)}`}
               className="luma-card p-3 sm:p-3.5 flex items-center gap-3 group hover:border-white/20 hover:bg-white/[0.04] transition-all"
             >
               <img
@@ -294,7 +294,7 @@ export default function DiscoverPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <Link
-                  href={cal.slug === 'deepmind' ? '/calendar/deepmind' : `/?calendarSlug=${cal.slug}`}
+                  href={`/calendar/${cal.slug}`}
                   className="flex items-center gap-3 min-w-0"
                 >
                   <div
@@ -347,7 +347,7 @@ export default function DiscoverPage() {
               </p>
 
               <Link
-                href={cal.slug === 'deepmind' ? '/calendar/deepmind' : `/?calendarSlug=${cal.slug}`}
+                href={`/calendar/${cal.slug}`}
                 className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors pt-2 border-t border-white/[0.05] flex items-center justify-between"
               >
                 <span>View Community Calendar</span>
@@ -360,60 +360,72 @@ export default function DiscoverPage() {
 
       {/* ================= 3. EXPLORE LOCAL EVENTS ================= */}
       <section className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-white/[0.08]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
           <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-xl font-bold tracking-tight text-white">Explore Local Events</h2>
+            <MapPin className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Explore Local Events
+            </h2>
           </div>
+          <span className="text-xs text-slate-500 dark:text-white/40">
+            {cities.length} cities available
+          </span>
         </div>
 
-        {/* Shadcn Tabs by Continent */}
-        <Tabs defaultValue="North America" className="w-full space-y-6">
-          <TabsList className="bg-white/[0.04] p-1 border border-white/[0.08] overflow-x-auto max-w-full justify-start h-auto">
-            {Object.keys(placesByContinent).map((continent) => (
-              <TabsTrigger
-                key={continent}
-                value={continent}
-                className="px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-black"
-              >
-                {continent}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {cities.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 dark:text-white/40 text-xs">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            Loading local cities from database...
+          </div>
+        ) : (
+          /* Shadcn Tabs by Continent */
+          <Tabs defaultValue={Object.keys(placesByContinent)[0] || 'North America'} className="w-full space-y-6">
+            <TabsList className="bg-black/[0.04] dark:bg-white/[0.04] p-1 border border-black/[0.08] dark:border-white/[0.08] overflow-x-auto max-w-full justify-start h-auto">
+              {Object.keys(placesByContinent).map((continent) => (
+                <TabsTrigger
+                  key={continent}
+                  value={continent}
+                  className="px-4 py-2 text-xs font-semibold data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-white dark:data-[state=active]:text-black"
+                >
+                  {continent}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          {Object.entries(placesByContinent).map(([continent, places]) => (
-            <TabsContent key={continent} value={continent} className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3">
-                {places.map((place) => (
-                  <Link
-                    key={place.slug || place.name}
-                    href={`/?city=${encodeURIComponent(place.name)}`}
-                    className="luma-card p-3 flex items-center gap-3 group hover:border-white/20 hover:bg-white/[0.04] transition-all"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 p-1 flex items-center justify-center"
-                      style={{ backgroundColor: place.tint || '#2f7ca9' }}
+            {Object.entries(placesByContinent).map(([continent, places]) => (
+              <TabsContent key={continent} value={continent} className="space-y-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3">
+                  {places.map((place) => (
+                    <Link
+                      key={place.slug || place.name}
+                      href={place.slug ? `/city/${place.slug}` : `/city?city=${encodeURIComponent(place.name)}`}
+                      className="luma-card p-3 flex items-center gap-3 group hover:border-black/20 dark:hover:border-white/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.04] transition-all"
                     >
-                      <img
-                        src={place.icon}
-                        alt={place.name}
-                        className="w-full h-full object-contain group-hover:scale-110 transition-transform"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs sm:text-sm font-bold text-white group-hover:text-blue-400 transition-colors truncate">
-                        {place.name}
+                      <div
+                        className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 p-1 flex items-center justify-center"
+                        style={{ backgroundColor: place.tint || '#2f7ca9' }}
+                      >
+                        <img
+                          src={place.icon}
+                          alt={place.name}
+                          className="w-full h-full object-contain group-hover:scale-110 transition-transform"
+                        />
                       </div>
-                      <div className="text-[11px] text-white/40 mt-0.5">
-                        {place.count} Events
+                      <div className="min-w-0">
+                        <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors truncate">
+                          {place.name}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-white/40 mt-0.5">
+                          {place.count} Events
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+                    </Link>
+                  ))}
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
       </section>
     </div>
   );

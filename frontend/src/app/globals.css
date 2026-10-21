@@ -21,40 +21,7 @@
 }
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
-    --bg-color: #f8fafc;
-    --text-color: #0f172a;
-    --header-bg: rgba(255, 255, 255, 0.85);
-    --header-border: rgba(0, 0, 0, 0.08);
-    --card-bg: #ffffff;
-    --card-border: rgba(0, 0, 0, 0.08);
-    --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
-    --card-shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.08);
-    --timeline-border: rgba(0, 0, 0, 0.12);
-    --btn-primary-bg: #0f172a;
-    --btn-primary-text: #ffffff;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 224 76% 48%;
-    --radius: 0.75rem;
-  }
-
+  :root,
   .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
@@ -86,6 +53,7 @@
     --border: 217 33% 15%;
     --input: 217 33% 18%;
     --ring: 224 76% 48%;
+    --radius: 0.75rem;
   }
 }
 
@@ -95,89 +63,11 @@ body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 header.navbar-root:not(.is-event-detail) {
   background-color: var(--header-bg);
   border-color: var(--header-border);
-}
-
-/* Light mode overrides for text, cards, and borders (strictly excluded on event detail pages) */
-html:not(.dark):not(.event-detail-active) header:not(.is-event-detail) .text-white,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) h1.text-white,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) h2.text-white,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) h3.text-white,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .font-bold.text-white,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .font-extrabold.text-white,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .font-semibold.text-white {
-  color: #0f172a;
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .text-white\/70,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .text-white\/60,
-html:not(.dark):not(.event-detail-active) header:not(.is-event-detail) .text-white\/70,
-html:not(.dark):not(.event-detail-active) header:not(.is-event-detail) .text-white\/60 {
-  color: rgba(15, 23, 42, 0.7);
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .text-white\/50,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .text-white\/40,
-html:not(.dark):not(.event-detail-active) header:not(.is-event-detail) .text-white\/50,
-html:not(.dark):not(.event-detail-active) header:not(.is-event-detail) .text-white\/40 {
-  color: rgba(15, 23, 42, 0.5);
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .border-white\/\[0\.08\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .border-white\/\[0\.06\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .border-white\/10,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .border-white\/\[0\.1\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .border-white\/\[0\.12\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .border-white\/\[0\.2\] {
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .bg-white\/\[0\.05\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .bg-white\/\[0\.03\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .bg-white\/\[0\.04\],
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .bg-white\/\[0\.08\] {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .hover\:bg-white\/10:hover,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .hover\:bg-white\/\[0\.05\]:hover,
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .hover\:bg-white\/\[0\.08\]:hover {
-  background-color: rgba(0, 0, 0, 0.06);
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) .placeholder-white\/40::placeholder {
-  color: rgba(15, 23, 42, 0.4);
-}
-
-html:not(.dark):not(.event-detail-active) :not(.event-detail-view):not(.event-detail-view *) input.text-white {
-  color: #0f172a;
-}
-
-html:not(.dark):not(.event-detail-active) .timeline-line {
-  border-left-color: var(--timeline-border);
-}
-
-html:not(.dark):not(.event-detail-active) .ring-\[\#0b0e14\] {
-  --tw-ring-color: #f8fafc;
-}
-
-/* Event detail view and footer are strictly dark */
-.event-detail-view,
-.event-detail-footer {
-  color: #ffffff !important;
-}
-
-.event-detail-footer .text-white\/50 {
-  color: rgba(255, 255, 255, 0.5) !important;
-}
-
-.event-detail-footer .border-white\/\[0\.08\] {
-  border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Helio Events Glassmorphic Cards */
@@ -195,11 +85,6 @@ html:not(.dark):not(.event-detail-active) .ring-\[\#0b0e14\] {
 .luma-card:hover {
   border-color: rgba(255, 255, 255, 0.16);
   box-shadow: var(--card-shadow-hover);
-}
-
-html:not(.dark) .helio-card:hover,
-html:not(.dark) .luma-card:hover {
-  border-color: rgba(0, 0, 0, 0.16);
 }
 
 /* Pill Button */
@@ -274,4 +159,16 @@ html:not(.dark) .luma-card:hover {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Toast Styling: Match background and white text */
+[data-sonner-toaster] [data-sonner-toast] {
+  background: var(--bg-color, #0b0e14) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast] [data-title],
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  color: #ffffff !important;
 }

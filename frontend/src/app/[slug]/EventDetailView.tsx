@@ -7,6 +7,7 @@ import { EventItem, Ticket } from '@/lib/api';
 import {
   ArrowRight,
   ArrowUpRight,
+  Check,
   CheckCircle2,
   Clock,
   Globe,
@@ -15,12 +16,9 @@ import {
   MailIcon,
   MapPin,
   Maximize2,
-  Minus,
-  Pencil,
   Plus,
-  Settings,
   ShoppingBag,
-  Tag,
+  Tag
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -68,6 +66,7 @@ function getPalette(hex?: string | null) {
   }
   const deg = Math.round(h * 360);
   const sat = Math.round(s * 45);
+
   return {
     pageBg: `hsl(${deg}, ${sat}%, 11%)`,
     cardBg: `hsl(${deg}, ${sat}%, 15%)`,
@@ -157,24 +156,9 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
     const prevBodyBg = document.body.style.backgroundColor;
     document.body.style.backgroundColor = pageBg;
 
-    // Enforce dark mode on event detail view (including navbar & footer)
-    const wasDark = document.documentElement.classList.contains('dark');
-    document.documentElement.classList.add('dark', 'event-detail-active');
-    document.documentElement.classList.remove('light');
-
     return () => {
       document.documentElement.style.removeProperty('--event-page-bg');
       document.body.style.backgroundColor = prevBodyBg;
-      document.documentElement.classList.remove('event-detail-active');
-      if (!wasDark) {
-        const savedTheme = localStorage.getItem('theme');
-        const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const shouldBeDark = savedTheme === 'dark' || (savedTheme === 'system' && isSystemDark);
-        if (!shouldBeDark) {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.classList.add('light');
-        }
-      }
     };
   }, [pageBg]);
 
@@ -206,7 +190,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
       return {
         status: 'ended' as const,
         badgeText: 'Event Ended',
-        badgeClass: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
+        // badgeClass: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
         canPurchase: false,
       };
     }
@@ -246,7 +230,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
       return {
         status: 'presale' as const,
         badgeText: `Presale ends ${formatted}`,
-        badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+        // badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
         canPurchase: true,
       };
     }
@@ -281,9 +265,9 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
   const handleUpdateMerchQuantity = (merchId: string, delta: number, maxStock?: number | null) => {
     setSelectedMerchQuantities((prev) => {
       const current = prev[merchId] || 0;
-      const next = Math.max(0, current + delta);
-      if (maxStock !== undefined && maxStock !== null && maxStock > 0 && next > maxStock) {
-        toast.info(`Only ${maxStock} in stock for this item`);
+      const next = Math.min(1, Math.max(0, current + delta)); // max 1 item per product
+      if (maxStock !== undefined && maxStock !== null && maxStock === 0) {
+        toast.info('This item is out of stock');
         return prev;
       }
       if (next === 0) {
@@ -291,7 +275,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
         delete copy[merchId];
         return copy;
       }
-      return { ...prev, [merchId]: next };
+      return { ...prev, [merchId]: 1 };
     });
   };
 
@@ -462,7 +446,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                   )}
                 </div>
 
-                {event.calendar && event.calendar.name !== event.host?.name && (
+                {event.calendar && (
                   <div className="flex items-center justify-between group">
                     <Link
                       href={`/calendar/${event.calendar.slug}`}
@@ -479,9 +463,14 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                           <span>{event.calendar.name.charAt(0)}</span>
                         )}
                       </div>
-                      <span className="text-sm font-semibold text-white/95 group-hover:text-blue-400 transition-colors">
-                        {event.calendar.name}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-white/95 group-hover:text-blue-400 transition-colors">
+                          {event.calendar.name}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50 font-medium">
+                          Calendar
+                        </span>
+                      </div>
                     </Link>
                   </div>
                 )}
@@ -594,13 +583,15 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                     : [];
                 return cats.map((cat, idx) => {
                   const tag = cat.startsWith('#') ? cat : `#${cat}`;
+                  const cleanCat = cat.replace(/^#/, '').trim();
                   return (
-                    <span
+                    <Link
                       key={idx}
-                      className="px-3 py-1 rounded-full text-xs font-medium bg-white/[0.04] border border-white/10 text-white/70"
+                      href={`/events?category=${encodeURIComponent(cleanCat)}`}
+                      className="px-3 py-1 rounded-full text-xs font-medium bg-white/[0.04] hover:bg-white/[0.12] hover:text-white border border-white/10 text-white/70 transition-colors cursor-pointer"
                     >
                       {tag}
-                    </span>
+                    </Link>
                   );
                 });
               })()}
@@ -612,20 +603,33 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
 
           {/* ================= RIGHT COLUMN (FULLY DYNAMIC BASED ON EVENT) ================= */}
           <div className="md:col-span-7 space-y-6">
-            {/* Featured in City Pill */}
+            {/* Featured in City & Calendar Pills */}
             {/* row */}
-            <div className='flex flex-row gap-2'>
+            <div className='flex flex-row gap-2 flex-wrap'>
               <Link
-                href={`/?city=${encodeURIComponent(cityName)}`}
+                href={`/city?city=${encodeURIComponent(cityName)}`}
                 className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] text-xs font-semibold text-white/90 transition-colors"
               >
                 <span className="text-amber-400">🗺️</span>
                 <span>
-                  Featured in <strong className="text-white">{cityName}</strong>
+                  Featured in <strong >{cityName}</strong>
                 </span>
                 {/* <span className="text-white/40 text-[10px] ml-0.5">›</span> */}
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
+
+              {event.calendar && (
+                <Link
+                  href={`/calendar/${event.calendar.slug}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] text-xs font-semibold text-white/90 transition-colors"
+                >
+                  <span className="text-blue-400">📅</span>
+                  <span>
+                    Calendar: <strong>{event.calendar.name}</strong>
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
 
               {isOwner && (
                 <div className="flex items-center gap-2 pt-0">
@@ -787,22 +791,22 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                         setSelectedTicketId(ticket.id);
                       }}
                       className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between gap-3 ${!saleStatus.canPurchase
-                        ? 'opacity-60 border-white/[0.05] bg-black/40 cursor-not-allowed'
+                        ? 'opacity-60 border-black/5 dark:border-white/[0.05] bg-black/5 dark:bg-black/40 cursor-not-allowed'
                         : isSelected
-                          ? 'border-white/50 bg-white/[0.1] shadow-md ring-1 ring-white/20'
-                          : 'border-white/[0.08] bg-black/20 hover:border-white/20 hover:bg-white/[0.04]'
+                          ? 'border-slate-800/40 dark:border-white/50 bg-slate-100/90 dark:bg-white/[0.1] shadow-sm ring-1 ring-slate-800/20 dark:ring-white/20'
+                          : 'border-black/[0.08] dark:border-white/[0.08] bg-black/[0.02] dark:bg-black/20 hover:border-black/20 dark:hover:border-white/20 hover:bg-black/[0.05] dark:hover:bg-white/[0.04]'
                         }`}
                     >
                       {/* Radio Indicator & Details */}
                       <div className="flex items-start gap-3 min-w-0">
                         <div
                           className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${isSelected && saleStatus.canPurchase
-                            ? 'border-white bg-white text-black'
-                            : 'border-white/30 bg-transparent'
+                            ? 'border-slate-900 bg-slate-900 dark:border-white dark:bg-white text-white dark:text-black'
+                            : 'border-slate-400/60 dark:border-white/30 bg-transparent'
                             }`}
                         >
                           {isSelected && saleStatus.canPurchase && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-black" />
                           )}
                         </div>
 
@@ -823,7 +827,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                           </div>
 
                           {ticket.description && (
-                            <div className="text-xs text-white/60 mt-0.5 line-clamp-1">
+                            <div className={`text-xs mt-1 leading-relaxed ${isSelected ? 'text-white/80 whitespace-pre-line' : 'text-white/50 line-clamp-1'}`}>
                               {ticket.description}
                             </div>
                           )}
@@ -885,11 +889,11 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                         Add official items to your ticket before checkout
                       </div>
                     </div>
-                    {selectedMerchList.length > 0 && (
+                    {/* {selectedMerchList.length > 0 && (
                       <span className="text-xs font-bold text-purple-300">
                         +{currencyDisplay} {totalMerchCost.toLocaleString()}
                       </span>
-                    )}
+                    )} */}
                   </div>
 
                   <div className="space-y-2">
@@ -943,40 +947,27 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                             </div>
                           </div>
 
-                          {/* Add / Counter Controls */}
+                          {/* Add / Toggle Controls (1 item per product) */}
                           <div className="flex items-center flex-shrink-0">
                             {qty === 0 ? (
                               <button
                                 type="button"
                                 onClick={() => handleUpdateMerchQuantity(merchId, 1, item.stock)}
-                                className="px-3 py-1.5 rounded-lg border border-white/20 hover:border-white/40 hover:bg-white/10 text-xs font-semibold text-white transition-all flex items-center gap-1 active:scale-95"
+                                className="px-3 py-1.5 rounded-lg border border-white/20 hover:border-white/40 hover:bg-white/10 text-xs font-semibold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
                               >
                                 <Plus className="w-3.5 h-3.5" />
                                 <span>Add</span>
                               </button>
                             ) : (
-                              <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg p-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateMerchQuantity(merchId, -1, item.stock)}
-                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/20 text-white transition-all active:scale-90"
-                                  aria-label="Decrease"
-                                >
-                                  <Minus className="w-3.5 h-3.5" />
-                                </button>
-                                <span className="text-xs font-bold text-white min-w-[1.2rem] text-center font-mono">
-                                  {qty}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateMerchQuantity(merchId, 1, item.stock)}
-                                  disabled={Boolean(item.stock && qty >= item.stock)}
-                                  className="w-6 h-6 rounded flex items-center justify-center hover:bg-white/20 text-white transition-all active:scale-90 disabled:opacity-40"
-                                  aria-label="Increase"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateMerchQuantity(merchId, -1, item.stock)}
+                                className="px-3 py-1.5 rounded-lg border border-purple-500/40 bg-purple-500/20 hover:bg-purple-500/30 text-xs font-semibold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+                                title="Click to remove"
+                              >
+                                <Check className="w-3.5 h-3.5 text-purple-300" />
+                                <span>Added</span>
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1036,18 +1027,20 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                     : 'bg-white/10 text-white/40 cursor-not-allowed border border-white/10'
                     }`}
                 >
-                  {isPast
-                    ? 'Event Ended'
-                    : !selectedTicketSaleStatus.canPurchase
-                      ? (selectedTicketSaleStatus.badgeText || 'Ticket Unavailable')
-                      : selectedTicket?.requireApproval || event.requireApproval
-                        ? 'Request to Join'
-                        : totalCost > 0
-                          ? `Register & Pay ${currencyDisplay} ${totalCost.toLocaleString()}`
-                          : 'Register Now'}
+                  <span className="text-black font-extrabold">
+                    {isPast
+                      ? 'Event Ended'
+                      : !selectedTicketSaleStatus.canPurchase
+                        ? (selectedTicketSaleStatus.badgeText || 'Ticket Unavailable')
+                        : selectedTicket?.requireApproval || event.requireApproval
+                          ? 'Request to Join'
+                          : totalCost > 0
+                            ? `Register & Pay ${currencyDisplay} ${totalCost.toLocaleString()}`
+                            : 'Register Now'}
+                  </span>
                 </button>
 
-                {isOwner && (
+                {/* {isOwner && (
                   <div className="flex items-center gap-2 pt-1">
                     {canEdit ? (
                       <Link
@@ -1070,7 +1063,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                       <span>Manage Event</span>
                     </Link>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
 

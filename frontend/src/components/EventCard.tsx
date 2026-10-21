@@ -36,13 +36,15 @@ export default function EventCard({ event }: EventCardProps) {
                   : [];
               return cats.map((cat, idx) => {
                 const tag = cat.startsWith('#') ? cat : `#${cat}`;
+                const cleanCat = cat.replace(/^#/, '').trim();
                 return (
-                  <span
+                  <Link
                     key={idx}
-                    className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-white/[0.04] border border-white/10 text-white/70 leading-none"
+                    href={`/events?category=${encodeURIComponent(cleanCat)}`}
+                    className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-white/[0.04] hover:bg-white/[0.12] hover:text-white border border-white/10 text-white/70 leading-none transition-colors"
                   >
                     {tag}
-                  </span>
+                  </Link>
                 );
               });
             })()}
@@ -74,7 +76,13 @@ export default function EventCard({ event }: EventCardProps) {
             <span className="truncate">By {event.host.name}</span>
             {event.calendar && (
               <span className="text-white/40 truncate">
-                in <span className="text-white/70">{event.calendar.name}</span>
+                in{' '}
+                <Link
+                  href={`/calendar/${event.calendar.slug}`}
+                  className="text-white/70 hover:text-blue-400 hover:underline transition-colors"
+                >
+                  {event.calendar.name}
+                </Link>
               </span>
             )}
           </div>

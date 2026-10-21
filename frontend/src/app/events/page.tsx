@@ -11,6 +11,7 @@ function EventsPageContent() {
   const searchParams = useSearchParams();
   const cityParam = searchParams.get('city');
   const categoryParam = searchParams.get('category');
+  const calendarSlugParam = searchParams.get('calendarSlug');
 
   const [timeframe, setTimeframe] = useState<'upcoming' | 'past'>('upcoming');
   const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam || 'All');
@@ -34,6 +35,7 @@ function EventsPageContent() {
       timeframe,
       category: selectedCategory === 'All' ? undefined : selectedCategory,
       city: cityFilter || undefined,
+      calendarSlug: calendarSlugParam || undefined,
       search: searchQuery || undefined,
     })
       .then((data) => {

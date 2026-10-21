@@ -124,6 +124,19 @@ async function getEventData(slug: string): Promise<EventItem | null> {
   return null;
 }
 
+import CityEventsView from '@/components/CityEventsView';
+
+const CITY_ALIASES: Record<string, string> = {
+  la: 'Los Angeles',
+  sf: 'San Francisco',
+  'san-francisco': 'San Francisco',
+  nyc: 'New York',
+  'new-york': 'New York',
+  jakarta: 'Jakarta',
+  london: 'London',
+  hillsborough: 'Hillsborough',
+};
+
 export default async function EventDetailPage({
   params,
 }: {
@@ -132,6 +145,11 @@ export default async function EventDetailPage({
   const event = await getEventData(params.slug);
 
   if (!event) {
+    const normalizedKey = params.slug.toLowerCase().replace(/\s+/g, '-');
+    const cityMatch = CITY_ALIASES[normalizedKey] || CITY_ALIASES[params.slug.toLowerCase()];
+    if (cityMatch) {
+      return <CityEventsView initialCity={cityMatch} />;
+    }
     notFound();
   }
 

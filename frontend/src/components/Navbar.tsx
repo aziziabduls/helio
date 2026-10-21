@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Calendar as CalendarIcon, Compass, LogOut, Monitor, Moon, Plus, Sun, User as UserIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Compass, LogOut, Plus, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,36 +12,12 @@ export default function Navbar() {
   const { user, openAuthModal, logout } = useAuth();
   const [time, setTime] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
 
-  useEffect(() => {
-    const saved = (localStorage.getItem('theme') as 'system' | 'light' | 'dark') || 'system';
-    setTheme(saved);
-    applyTheme(saved);
-
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleMediaChange = () => {
-      if ((localStorage.getItem('theme') || 'system') === 'system') {
-        applyTheme('system');
-      }
-    };
-    media.addEventListener('change', handleMediaChange);
-    return () => media.removeEventListener('change', handleMediaChange);
-  }, []);
-
-  const applyTheme = (t: 'system' | 'light' | 'dark') => {
-    const isDark =
-      t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.classList.toggle('dark', isDark);
-    document.documentElement.classList.toggle('light', !isDark);
-  };
-
-  const toggleTheme = () => {
-    const next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
-    setTheme(next);
-    localStorage.setItem('theme', next);
-    applyTheme(next);
-  };
+  const isCityPath =
+    pathname.startsWith('/city') ||
+    ['/la', '/sf', '/san-francisco', '/nyc', '/new-york', '/jakarta', '/london', '/hillsborough'].includes(
+      pathname.toLowerCase()
+    );
 
   const isEventDetail =
     pathname === '/create' ||
@@ -51,6 +27,7 @@ export default function Navbar() {
       pathname !== '/discover' &&
       pathname !== '/profile' &&
       pathname !== '/login' &&
+      !isCityPath &&
       !pathname.startsWith('/calendar/') &&
       !pathname.startsWith('/manage/') &&
       !pathname.startsWith('/profile/'));
@@ -77,13 +54,13 @@ export default function Navbar() {
 
   return (
     <header
-      className={`navbar-root sticky top-0 z-50 w-full backdrop-blur-md transition-colors duration-200 ${isEventDetail
+      className={`navbar-root sticky top-0 z-50 w-full backdrop-blur-[6px] transition-colors duration-200 ${isEventDetail
         ? 'is-event-detail border-white/[0.06]'
         : 'border-white/[0.08]'
         }`}
       style={{
         backgroundColor: isEventDetail
-          ? 'color-mix(in srgb, var(--event-page-bg, var(--bg-color)) 80%, transparent)'
+          ? 'color-mix(in srgb, var(--event-page-bg, var(--bg-color)) 70%, transparent)'
           : 'var(--header-bg)',
       }}
     >
@@ -91,7 +68,7 @@ export default function Navbar() {
         {/* Section 1 - Left: Brand Logo */}
         <div className="flex items-center justify-start flex-shrink-0">
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-            <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-1.5 font-sans">
+            <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-0 font-sans">
               <span>helio</span>
               <span className="text-blue-500 text-sm transform -translate-y-1">✦</span>
             </span>
@@ -104,11 +81,10 @@ export default function Navbar() {
           <div className="hidden sm:flex items-center gap-4">
             <Link
               href="/events"
-              className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${
-                pathname === '/events'
-                  ? 'text-white'
-                  : 'text-white/70 hover:text-white'
-              }`}
+              className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${pathname === '/events'
+                ? 'text-white'
+                : 'text-white/70 hover:text-white'
+                }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
               <span>Events</span>
@@ -116,11 +92,10 @@ export default function Navbar() {
 
             <Link
               href="/discover"
-              className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${
-                pathname === '/discover'
-                  ? 'text-white'
-                  : 'text-white/70 hover:text-white'
-              }`}
+              className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${pathname === '/discover'
+                ? 'text-white'
+                : 'text-white/70 hover:text-white'
+                }`}
             >
               <Compass className="w-3.5 h-3.5" />
               <span>Discover</span>
@@ -134,7 +109,7 @@ export default function Navbar() {
         </div>
 
         {/* Section 3 - Right: Time, Create Event & Profile / Sign In */}
-        <div className="flex items-center justify-end gap-2 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 sm:gap-3 flex-shrink-0">
           <Link
             href="/discover"
             className="sm:hidden text-sm text-white/70 hover:text-white mr-1 flex-shrink-0"
@@ -159,20 +134,6 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Theme switcher (hidden on event detail) */}
-          {!isEventDetail && (
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={`Theme: ${theme}. Click to change theme.`}
-              title={`Theme: ${theme}`}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors focus:outline-none flex-shrink-0"
-            >
-              {theme === 'system' && <Monitor className="w-4 h-4" />}
-              {theme === 'light' && <Sun className="w-4 h-4" />}
-              {theme === 'dark' && <Moon className="w-4 h-4" />}
-            </button>
-          )}
 
           {/* User Session Management */}
           {user ? (

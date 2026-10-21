@@ -109,22 +109,37 @@ export class CategoryService {
 
   async getCities() {
     try {
+      const eventCounts = await prisma.event.groupBy({
+        by: ['city'],
+        _count: { id: true },
+        where: { city: { not: null } },
+      });
+      const countMap = new Map<string, number>();
+      for (const ec of eventCounts) {
+        if (ec.city) {
+          countMap.set(ec.city.toLowerCase(), ec._count.id);
+        }
+      }
+
       const dbCities = await prisma.city.findMany({
-        orderBy: { count: 'desc' },
+        orderBy: [{ continent: 'asc' }, { count: 'desc' }],
       });
       if (dbCities && dbCities.length > 0) {
-        return dbCities.map((c: City) => ({
-          name: c.name,
-          slug: c.slug,
-          region: c.continent,
-          continent: c.continent,
-          icon: c.icon,
-          count: c.count,
-          tint: c.tint,
-        }));
+        return dbCities.map((c: City) => {
+          const live = countMap.get(c.name.toLowerCase()) || 0;
+          return {
+            name: c.name,
+            slug: c.slug,
+            region: c.continent,
+            continent: c.continent,
+            icon: c.icon,
+            count: Math.max(c.count, live),
+            tint: c.tint,
+          };
+        });
       }
     } catch (e) {
-      // Fallback
+      console.warn('Failed to load cities from DB, using fallback:', e);
     }
 
     return CITY_METADATA;

@@ -9,6 +9,12 @@ export default function Footer() {
 
   // If on an event detail page, the event view renders its own thematic footer
   // with dynamic event prominent border color.
+  const isCityPath =
+    pathname.startsWith('/city') ||
+    ['/la', '/sf', '/san-francisco', '/nyc', '/new-york', '/jakarta', '/london', '/hillsborough'].includes(
+      pathname.toLowerCase()
+    );
+
   const isEventDetail =
     pathname &&
     pathname !== '/' &&
@@ -17,6 +23,7 @@ export default function Footer() {
     pathname !== '/profile' &&
     pathname !== '/create' &&
     pathname !== '/login' &&
+    !isCityPath &&
     !pathname.startsWith('/calendar/');
 
   if (isEventDetail) {

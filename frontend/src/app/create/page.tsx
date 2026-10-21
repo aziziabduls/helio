@@ -206,6 +206,7 @@ function getPalette(hex?: string | null) {
   }
   const deg = Math.round(h * 360);
   const sat = Math.round(s * 45);
+
   return {
     pageBg: `hsl(${deg}, ${sat}%, 11%)`,
     cardBg: `hsl(${deg}, ${sat}%, 15%)`,
@@ -780,23 +781,23 @@ function CreateEventForm() {
 
   if (isLoadingEdit) {
     return (
-      <div className="min-h-screen bg-[#0e1626] flex items-center justify-center text-white space-y-3 flex-col">
-        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-        <p className="text-xs text-white/50">Loading event details...</p>
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0e1626] flex items-center justify-center text-slate-800 dark:text-white space-y-3 flex-col">
+        <div className="w-8 h-8 border-2 border-slate-300 border-t-slate-900 dark:border-white/20 dark:border-t-white rounded-full animate-spin" />
+        <p className="text-xs text-slate-500 dark:text-white/50">Loading event details...</p>
       </div>
     );
   }
 
   return (
     <div
-      className={`min-h-screen text-white antialiased selection:bg-white/20 ${fontClass} transition-colors duration-500`}
+      className={`dark min-h-screen text-white antialiased selection:bg-white/20 ${fontClass}`}
       style={{ backgroundColor: pageBg }}
     >
       {/* ================= STICKY TOP NAVIGATION & TOOLBAR ================= */}
       <div
-        className="sticky top-11 z-40 w-full backdrop-blur-md transition-colors duration-200 py-3 sm:py-2"
+        className="sticky top-11 z-40 w-full backdrop-blur-md transition-colors duration-200 py-3 sm:py-2 border-b border-white/[0.06]"
         style={{
-          backgroundColor: `color-mix(in srgb, ${pageBg} 80%, transparent)`,
+          backgroundColor: `color-mix(in srgb, ${pageBg} 85%, transparent)`,
         }}
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -931,7 +932,7 @@ function CreateEventForm() {
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-3.5 h-3.5 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                      <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       <span>{isEditMode ? 'Saving...' : 'Publishing...'}</span>
                     </>
                   ) : isEditMode ? (
@@ -1718,7 +1719,7 @@ function CreateEventForm() {
       {/* ================= MODAL: CHANGE COVER POSTER ================= */}
       {isCoverModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-xl p-6 rounded-3xl bg-[#131924] border border-white/15 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-xl p-6 rounded-3xl bg-white dark:bg-[#131924] border border-black/10 dark:border-white/15 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-white">Choose Cover Poster</h3>
@@ -1800,7 +1801,7 @@ function CreateEventForm() {
       {/* ================= MODAL: CUSTOM CATEGORY ================= */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md p-6 rounded-3xl bg-[#131924] border border-white/15 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-md p-6 rounded-3xl bg-white dark:bg-[#131924] border border-black/10 dark:border-white/15 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-white">Event Category</h3>
@@ -1907,7 +1908,7 @@ function CreateEventForm() {
       {/* ================= MODAL: CREATE NEW CALENDAR ================= */}
       {isNewCalendarModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg p-6 rounded-3xl bg-[#131924] border border-white/15 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-full max-w-lg p-6 rounded-3xl bg-white dark:bg-[#131924] border border-black/10 dark:border-white/15 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-white">Create Community Calendar</h3>
