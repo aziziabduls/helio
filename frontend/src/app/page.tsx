@@ -1,18 +1,44 @@
 'use client';
 
 import EventCard from '@/components/EventCard';
+import GradientWaves from '@/components/GradientWaves';
+import Grainient from '@/components/Grainient';
+import LightRays from '@/components/LightRays';
+import SpecularButton from '@/components/SpecularButton';
 import { useAuth } from '@/context/AuthContext';
 import { EventItem, fetchEvents } from '@/lib/api';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Calendar, Compass, Plus, Sparkles, Ticket, Users } from 'lucide-react';
+import { ArrowRight, Compass, Plus, Sparkles, Ticket, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-const WORDS = ['Delightful', 'Vivid', 'Stellar', 'Lovely'];
+const WORDS = [
+  {
+    text: 'Delightful',
+    className: "font-['Playfair_Display',serif] italic font-normal tracking-tighter text-pink-300 dark:text-pink-200",
+  },
+  {
+    text: 'Vivid',
+    className: "font-['Space_Grotesk',sans-serif] font-bold tracking-tighter bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent",
+  },
+  {
+    text: 'Stellar',
+    className: "font-['JetBrains_Mono',monospace] font-semibold tracking-tighter text-blue-400 dark:text-blue-300",
+  },
+  {
+    text: 'Lovely',
+    className: "font-['Cinzel',serif] uppercase font-bold tracking-tighter text-emerald-300 dark:text-emerald-200 text-[0.88em]",
+  },
+];
 
 export default function LandingPage() {
+  const router = useRouter();
   const { user, openAuthModal } = useAuth();
   const [wordIndex, setWordIndex] = useState(0);
+  const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('waves');
+  // const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('grainient');
+  // const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('lightrays');
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +46,15 @@ export default function LandingPage() {
     if (!user) {
       e.preventDefault();
       openAuthModal();
+    }
+  };
+
+  const handleHeroCreate = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      openAuthModal();
+    } else {
+      router.push('/create');
     }
   };
 
@@ -52,20 +87,49 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="relative overflow-hidden min-h-screen">
-      {/* Ambient background glow (adapts opacity across light/dark) */}
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[550px] opacity-15 dark:opacity-25 blur-[120px] rounded-full transition-opacity duration-300"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(171,70,221,0.4) 0%, rgba(243,26,124,0.3) 35%, rgba(248,113,43,0.2) 65%, transparent 80%)',
-        }}
-      />
+    <div className="relative overflow-hidden min-h-screen -mt-11">
+      {/* Hero Backdrop (Switchable between Grainient, LightRays, and GradientWaves) */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 w-full h-[100dvh] overflow-hidden z-0 opacity-50 [mask-image:radial-gradient(ellipse_100%_80%_at_50%_40%,#000_30%,transparent_100%)]">
+        {heroEffect === 'grainient' ? (
+          <Grainient
+            colors={['#0b0e14', '#180d2b', '#3b1261', '#6d28d9', '#a855f7', '#e9d5ff']}
+            angle={55}
+            flow={0.8}
+            silk={0.35}
+            grainAmount={0.08}
+          />
+        ) : heroEffect === 'lightrays' ? (
+          <LightRays
+            raysOrigin="top-center"
+            raysColor="#7c3aed"
+            raysSpeed={1}
+            lightSpread={0.4}
+            rayLength={3}
+            glow={0.65}
+            haze={0.25}
+            followMouse
+            mouseInfluence={0.1}
+            saturation={0.85}
+          />
+        ) : (
+          <GradientWaves
+            horizonColor="#8b5cf6"
+            waveColor="#e879f9"
+            crestColor="#f5d0fe"
+            speed={0.4}
+            amplitude={2.5}
+            relief={1}
+            lightAngle={120}
+            mouseInteraction
+            swellOnClick
+          />
+        )}
+      </div>
 
       {/* Hero Section */}
-      <section className="relative max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-16 text-center flex flex-col items-center">
+      <section className="relative z-10 w-full min-h-screen max-w-4xl mx-auto px-4 sm:px-6 pt-16 sm:pt-20 pb-12 sm:pb-16 text-center flex flex-col items-center justify-center">
         {/* Hero Title */}
-        <div className="flex items-center justify-start flex-shrink-0 mb-0 sm:mb-10">
+        <div className="flex items-center justify-start flex-shrink-0 mb-7 sm:mb-10">
           <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
             <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-white flex items-center gap-0 font-sans">
               <span>helio</span>
@@ -73,23 +137,23 @@ export default function LandingPage() {
             </span>
           </Link>
         </div>
-        <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight flex flex-col items-center justify-center gap-1 sm:gap-2">
-          <span className="relative h-[1.18em] overflow-hidden flex items-center justify-center">
+        <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter text-slate-900 dark:text-white leading-tight flex flex-col items-center justify-center gap-1 sm:gap-2">
+          <span className="relative h-[1.18em] overflow-hidden flex items-center justify-center mb-[-20px] z-10">
             <AnimatePresence mode="wait">
               <motion.span
-                key={WORDS[wordIndex]}
+                key={WORDS[wordIndex].text}
                 initial={{ opacity: 0, y: 32, filter: 'blur(6px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
                 exit={{ opacity: 0, y: -32, filter: 'blur(6px)' }}
                 transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                className="inline-block text-slate-900 dark:text-white"
+                className={`inline-block px-1 ${WORDS[wordIndex].className}`}
               >
-                {WORDS[wordIndex]}
+                {WORDS[wordIndex].text}
               </motion.span>
             </AnimatePresence>
           </span>
-          <span className="text-slate-900 dark:text-white">events</span>
-          <span className="luma-gradient-text pb-1">start here</span>
+          <span className="text-slate-900 dark:text-white pb-[-10px] mb-[-17px] sm:mb-[-10px] z-5">events</span>
+          <span className="luma-gradient-text pb-1 z-1">start here</span>
         </h1>
 
         {/* Hero Subtitle */}
@@ -120,13 +184,26 @@ export default function LandingPage() {
 
         {/* Hero CTAs */}
         <div className="mt-8 flex flex-col items-center gap-4">
-          <Link
-            href="/create"
-            onClick={handleCreateClick}
-            className="luma-btn luma-btn-primary px-6 py-3 text-sm sm:text-base font-semibold shadow-lg shadow-black/5 dark:shadow-white/5 hover:scale-[1.02] transition-transform"
+          <SpecularButton
+            size="lg"
+            radius={18}
+            tint="#18181b"
+            tintOpacity={1}
+            textColor="#fafafa"
+            lineColor="#ffffff"
+            baseColor="#3f3f46"
+            intensity={1}
+            idleIntensity={0.35}
+            shineSize={10}
+            shineFade={34}
+            thickness={1.2}
+            glow={1}
+            followMouse
+            proximity={250}
+            onClick={handleHeroCreate}
           >
             Create Your First Event
-          </Link>
+          </SpecularButton>
 
           <Link
             href="/discover"
@@ -135,15 +212,44 @@ export default function LandingPage() {
             <span>Discover Events</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
+
+          {/* Hero Backdrop Switcher Pill */}
+          {/* <div className="mt-2 flex items-center gap-1 p-1 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md text-[11px] text-white/50">
+            <span className="px-2 text-[10px] uppercase tracking-wider text-white/30 font-medium select-none">
+              Hero Vibe:
+            </span>
+            <button
+              type="button"
+              onClick={() => setHeroEffect('grainient')}
+              className={`px-3 py-1 rounded-full transition-all ${
+                heroEffect === 'grainient'
+                  ? 'bg-white/15 text-white font-medium shadow-sm'
+                  : 'hover:text-white'
+              }`}
+            >
+              Grainient
+            </button>
+            <button
+              type="button"
+              onClick={() => setHeroEffect('lightrays')}
+              className={`px-3 py-1 rounded-full transition-all ${
+                heroEffect === 'lightrays'
+                  ? 'bg-white/15 text-white font-medium shadow-sm'
+                  : 'hover:text-white'
+              }`}
+            >
+              Light Rays
+            </button>
+          </div> */}
         </div>
       </section>
 
       {/* Featured / Live Upcoming Events Preview */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 py-12 border-t border-black/[0.08] dark:border-white/[0.08]">
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 py-12 dark:border-white/[0.08]">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+              {/* <Calendar className="w-5 h-5 text-blue-500 dark:text-blue-400" /> */}
               <span>Happening Soon</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-white/50 mt-0.5">
@@ -155,7 +261,7 @@ export default function LandingPage() {
             href="/events"
             className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors flex items-center gap-1"
           >
-            <span>View all</span>
+            <span className='hidden sm:block'>View all</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

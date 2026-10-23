@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { Calendar as CalendarIcon, Compass, LogOut, Plus, User as UserIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Compass, LogOut, Plus, Search, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ export default function Navbar() {
   const { user, openAuthModal, logout } = useAuth();
   const [time, setTime] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const isCityPath =
     pathname.startsWith('/city') ||
@@ -52,16 +53,41 @@ export default function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
+
+  useEffect(() => {
+    if (pathname !== '/') {
+      setScrolledPastHero(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      const threshold = (window.innerHeight || 600) * 0.65;
+      setScrolledPastHero(window.scrollY > threshold);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [pathname]);
+
+  const isHome = pathname === '/';
+  const isTransparent = isHome && !scrolledPastHero;
+
   return (
     <header
-      className={`navbar-root sticky top-0 z-50 w-full backdrop-blur-[6px] transition-colors duration-200 ${isEventDetail
-        ? 'is-event-detail border-white/[0.06]'
-        : 'border-white/[0.08]'
+      className={`navbar-root sticky top-0 z-50 w-full transition-all duration-300 ${isTransparent
+        ? 'is-transparent bg-transparent border-transparent'
+        : isEventDetail
+          ? 'is-event-detail border-b border-white/[0.06] backdrop-blur-[6px]'
+          : 'border-b border-white/[0.08] backdrop-blur-[12px]'
         }`}
       style={{
-        backgroundColor: isEventDetail
-          ? 'color-mix(in srgb, var(--event-page-bg, var(--bg-color)) 70%, transparent)'
-          : 'var(--header-bg)',
+        backgroundColor: isTransparent
+          ? 'transparent'
+          : isEventDetail
+            ? 'color-mix(in srgb, var(--event-page-bg, var(--bg-color)) 70%, transparent)'
+            : 'var(--header-bg)',
       }}
     >
       <div className="w-full px-4 sm:px-6 h-11 flex items-center justify-between xl:grid xl:grid-cols-[1fr_minmax(0,56rem)_1fr]">
@@ -76,9 +102,9 @@ export default function Navbar() {
         </div>
 
         {/* Section 2 - Center: Menu and Search Bar (Exact boundary above Events and Upcoming/Past) */}
-        <div className="w-full h-full flex items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="hidden sm:flex w-full h-full items-center justify-between gap-4 px-4 sm:px-6">
           {/* Left boundary: directly above "Events" title */}
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <Link
               href="/events"
               className={`text-[13px] font-semibold transition-colors flex items-center gap-1 ${pathname === '/events'
@@ -104,18 +130,37 @@ export default function Navbar() {
 
           {/* Right boundary: directly above "Upcoming / Past" */}
           <div className="flex items-center ml-auto sm:ml-0">
-            <EventSearchBar />
+            <EventSearchBar open={searchOpen} onOpenChange={setSearchOpen} hideMobileTrigger />
           </div>
         </div>
 
         {/* Section 3 - Right: Time, Create Event & Profile / Sign In */}
-        <div className="flex items-center justify-end gap-3 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center justify-end gap-4 sm:gap-4 flex-shrink-0">
+          <Link
+            href="/events"
+            className={`sm:hidden text-sm flex-shrink-0 transition-colors ${pathname === '/events' ? 'text-white' : 'text-white/70 hover:text-white'
+              }`}
+          >
+            <CalendarIcon className="w-5 h-5" />
+          </Link>
+
           <Link
             href="/discover"
-            className="sm:hidden text-sm text-white/70 hover:text-white mr-1 flex-shrink-0"
+            className={`sm:hidden text-sm flex-shrink-0 transition-colors ${pathname === '/discover' ? 'text-white' : 'text-white/70 hover:text-white'
+              }`}
           >
             <Compass className="w-5 h-5" />
           </Link>
+
+          {/* Mobile Search Button: positioned at the far right with uniform gap */}
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search events"
+            className="sm:hidden text-sm text-white/70 hover:text-white flex-shrink-0 transition-colors focus:outline-none"
+          >
+            <Search className="w-5 h-5" />
+          </button>
 
           {time && (
             <div className="hidden sm:flex items-center gap-1 text-[12px] text-white/50 mr-0 px-0.5 py-1 rounded-full flex-shrink-0">
@@ -200,6 +245,8 @@ export default function Navbar() {
               Sign In
             </button>
           )}
+
+
         </div>
       </div>
     </header>

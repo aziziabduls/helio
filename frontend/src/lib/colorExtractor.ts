@@ -158,3 +158,63 @@ export function extractProminentColorFromImage(
     }
   };
 }
+
+// Client-side dominant color extractor (finds the most frequent color in the image)
+export function extractDominantColorFromImage(
+  imgUrl: string,
+  onColorExtracted: (color: string) => void
+) {
+  if (typeof window === 'undefined' || !imgUrl) return;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = imgUrl;
+
+  img.onload = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const size = 64;
+      canvas.width = size;
+      canvas.height = size;
+      ctx.drawImage(img, 0, 0, size, size);
+
+      const imageData = ctx.getImageData(0, 0, size, size).data;
+      const buckets: Record<string, { r: number; g: number; b: number; count: number }> = {};
+      let maxCount = 0;
+      let dominant = { r: 14, g: 22, b: 38 };
+
+      for (let i = 0; i < imageData.length; i += 4) {
+        const r = imageData[i];
+        const g = imageData[i + 1];
+        const b = imageData[i + 2];
+        const a = imageData[i + 3];
+
+        if (a < 128) continue;
+
+        // Group into buckets of 16 to cluster similar color tones
+        const bucketR = Math.round(r / 16) * 16;
+        const bucketG = Math.round(g / 16) * 16;
+        const bucketB = Math.round(b / 16) * 16;
+        const key = `${bucketR},${bucketG},${bucketB}`;
+
+        if (!buckets[key]) {
+          buckets[key] = { r: bucketR, g: bucketG, b: bucketB, count: 0 };
+        }
+        buckets[key].count++;
+
+        if (buckets[key].count > maxCount) {
+          maxCount = buckets[key].count;
+          dominant = buckets[key];
+        }
+      }
+
+      onColorExtracted(rgbToHex(dominant.r, dominant.g, dominant.b));
+    } catch (e) {
+      // Cross-origin fallback
+    }
+  };
+}
+

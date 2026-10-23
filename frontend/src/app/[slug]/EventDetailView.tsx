@@ -3,10 +3,12 @@
 import RsvpModal from '@/components/RsvpModal';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/context/AuthContext';
-import { EventItem, Ticket } from '@/lib/api';
+import { EventItem, Ticket, fetchEventBySlug } from '@/lib/api';
+import { extractDominantColorFromImage } from '@/lib/colorExtractor';
 import {
   ArrowRight,
   ArrowUpRight,
+  Calendar,
   Check,
   CheckCircle2,
   Clock,
@@ -29,16 +31,9 @@ interface EventDetailViewProps {
 }
 
 function getPalette(hex?: string | null) {
-  if (!hex || !hex.startsWith('#')) {
-    return {
-      pageBg: '#0e1626',
-      cardBg: '#162238',
-      squircleBg: '#142034',
-      cardBorder: 'rgba(56, 110, 200, 0.25)',
-      footerBorder: '#1c2d4a',
-    };
-  }
-  let c = hex.replace('#', '');
+  const fallbackHex = '#0e1626';
+  const effectiveHex = hex && hex.startsWith('#') ? hex : fallbackHex;
+  let c = effectiveHex.replace('#', '');
   if (c.length === 3) c = c.split('').map((x) => x + x).join('');
   const r = parseInt(c.substring(0, 2), 16) / 255;
   const g = parseInt(c.substring(2, 4), 16) / 255;
@@ -65,14 +60,23 @@ function getPalette(hex?: string | null) {
     h /= 6;
   }
   const deg = Math.round(h * 360);
-  const sat = Math.round(s * 45);
+  const sat = Math.round(s * 100);
+
+  // If hex is already a dark tone (l <= 0.20), use the exact hex directly
+  const isAlreadyDark = l <= 0.20;
+  const pageBg = isAlreadyDark ? effectiveHex : `hsl(${deg}, ${sat}%, 11%)`;
+  const cardLightness = isAlreadyDark ? Math.min(22, Math.round(l * 100) + 4) : 15;
+  const cardBg = `hsl(${deg}, ${Math.round(sat * 0.85)}%, ${cardLightness}%)`;
+  const squircleBg = `hsl(${deg}, ${Math.round(sat * 0.8)}%, ${Math.max(10, cardLightness - 2)}%)`;
+  const cardBorder = `hsla(${deg}, ${sat}%, 35%, 0.25)`;
+  const footerBorder = `hsla(${deg}, ${sat}%, 25%, 0.35)`;
 
   return {
-    pageBg: `hsl(${deg}, ${sat}%, 11%)`,
-    cardBg: `hsl(${deg}, ${sat}%, 15%)`,
-    squircleBg: `hsl(${deg}, ${sat}%, 13%)`,
-    cardBorder: `hsla(${deg}, ${sat}%, 30%, 0.3)`,
-    footerBorder: `hsla(${deg}, ${sat}%, 22%, 0.4)`,
+    pageBg,
+    cardBg,
+    squircleBg,
+    cardBorder,
+    footerBorder,
   };
 }
 
@@ -128,26 +132,46 @@ function formatEventDate(startAt: string, endAt?: string) {
 
 export default function EventDetailView({ initialEvent }: EventDetailViewProps) {
   const router = useRouter();
-  const [event] = useState<EventItem>(initialEvent);
+  const [event, setEvent] = useState<EventItem>(initialEvent);
   const [isRsvpOpen, setIsRsvpOpen] = useState(false);
+  const [prominentColor, setProminentColor] = useState<string | null>(initialEvent.tintColor || null);
 
-  // Exact SaladStop x Radius detection
-  const isSaladStop =
-    event.slug.includes('saladstop') ||
-    event.slug === 'fzxb1tj6' ||
-    event.name.toLowerCase().includes('saladstop');
-
-  // Exact Matte Deep Forest Green from screenshot (#152614) or dynamic prominent palette
-  const defaultPalette = isSaladStop
-    ? {
-      pageBg: '#152614',
-      cardBg: '#1c331c',
-      squircleBg: '#1a301a',
-      cardBorder: 'rgba(74, 114, 71, 0.25)',
-      footerBorder: '#233b21',
+  // Always re-fetch fresh event data from API on reload / mount
+  useEffect(() => {
+    if (initialEvent?.slug) {
+      fetchEventBySlug(initialEvent.slug)
+        .then((fresh) => {
+          if (fresh) {
+            setEvent(fresh);
+            if (fresh.tintColor) {
+              setProminentColor(fresh.tintColor);
+            }
+          }
+        })
+        .catch((err) => {
+          console.warn('Failed to fetch fresh event from API:', err);
+        });
     }
-    : getPalette(event.tintColor);
+  }, [initialEvent?.slug]);
 
+  useEffect(() => {
+    // If event already has tintColor from DB, prioritize it and do not overwrite
+    if (event.tintColor) {
+      setProminentColor(event.tintColor);
+      return;
+    }
+
+    const cover = event.coverUrl || event.coverCardUrl;
+    if (cover) {
+      extractDominantColorFromImage(cover, (color) => {
+        if (color) {
+          setProminentColor(color);
+        }
+      });
+    }
+  }, [event.tintColor, event.coverUrl, event.coverCardUrl]);
+
+  const defaultPalette = getPalette(prominentColor || event.tintColor);
   const { pageBg, cardBg, squircleBg, cardBorder, footerBorder } = defaultPalette;
 
   // Sync navbar and body background seamlessly with event's custom pageBg
@@ -300,9 +324,7 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
 
   const dateInfo = formatEventDate(event.startAt, event.endAt);
   const locationQuery = encodeURIComponent(
-    isSaladStop
-      ? 'Senayan City Mall, Jakarta'
-      : `${event.address || ''} ${event.city || ''}`.trim()
+    `${event.address || ''} ${event.city || ''}`.trim() || event.name
   );
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${locationQuery}`;
 
@@ -450,26 +472,26 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                   <div className="flex items-center justify-between group">
                     <Link
                       href={`/calendar/${event.calendar.slug}`}
-                      className="flex items-center gap-2.5 hover:opacity-85 transition-opacity"
+                      className="flex items-center justify-between w-full hover:opacity-85 transition-opacity"
                     >
-                      <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-white/15 bg-white/10 flex items-center justify-center text-xs">
-                        {event.calendar.avatarUrl ? (
-                          <img
-                            src={event.calendar.avatarUrl}
-                            alt={event.calendar.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span>{event.calendar.name.charAt(0)}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 ring-1 ring-white/15 bg-white/10 flex items-center justify-center text-xs">
+                          {event.calendar.avatarUrl ? (
+                            <img
+                              src={event.calendar.avatarUrl}
+                              alt={event.calendar.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{event.calendar.name.charAt(0)}</span>
+                          )}
+                        </div>
                         <span className="text-sm font-semibold text-white/95 group-hover:text-blue-400 transition-colors">
                           {event.calendar.name}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/50 font-medium">
-                          Calendar
-                        </span>
+                      </div>
+                      <div className="p-1">
+                        <Calendar className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
                       </div>
                     </Link>
                   </div>
@@ -595,9 +617,6 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                   );
                 });
               })()}
-              {/* <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/[0.04] border border-white/10 text-white/70">
-                #{isSaladStop ? 'Running' : cityName}
-              </span> */}
             </div>
           </div>
 
@@ -774,10 +793,8 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
                   const isFree = ticket.price === 0 || ticket.type === 'free';
                   const saleStatus = getTicketSaleStatus(ticket);
                   const remaining = ticket.capacity
-                    ? Math.max(1, ticket.capacity - (event._count?.registrations || 0))
-                    : isSaladStop && ticket.type === 'vip'
-                      ? 3
-                      : null;
+                    ? Math.max(0, ticket.capacity - (event._count?.registrations || 0))
+                    : null;
 
                   return (
                     <button
@@ -1071,44 +1088,9 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
             <div className="space-y-3 pt-2">
               <h3 className="text-xs font-semibold text-white/50">About Event</h3>
 
-              {isSaladStop ? (
-                <div className="text-sm text-white/90 leading-relaxed space-y-4">
-                  <h4 className="text-base font-extrabold text-white">
-                    Radius x SaladStop! : GOODNESS IN MOTION 🏃🥗
-                  </h4>
-
-                  <div className="space-y-2">
-                    <p>Drop bag and meeting point : South Lobby Senayan City (Near Starbucks)</p>
-                    <p>Time : 5:30 – Start Registration. Please come on time!</p>
-                    <p>
-                      Lace up your shoes and bring your appetite! Join us for a fun community run
-                      followed by delicious, healthy refueling.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h5 className="font-bold text-white">What’s waiting for you at the finish line?</h5>
-                    <ul className="space-y-1">
-                      <li>👕 Free exclusive jersey</li>
-                      <li>🥗 Free post-run meal from SaladStop!</li>
-                      <li>🧃 Free refreshing drinks</li>
-                      <li>🎉 Plus, exciting games and fun activities!</li>
-                    </ul>
-                  </div>
-
-                  <p className="font-bold text-white">🎟️ Entry is 100% FREE!</p>
-
-                  <p className="italic text-xs text-white/60 leading-relaxed pt-1">
-                    Please note: Registration operates on a waitlist system. Join the waitlist now,
-                    and if your spot is confirmed, you will be notified and receive your ticket directly
-                    via email.
-                  </p>
-                </div>
-              ) : (
-                <div className="text-sm text-white/90 leading-relaxed space-y-3 whitespace-pre-line">
-                  {event.description}
-                </div>
-              )}
+              <div className="text-sm text-white/90 leading-relaxed space-y-3 whitespace-pre-line">
+                {event.description || 'No description provided for this event.'}
+              </div>
             </div>
 
             {/* ================= LOCATION SECTION & MAP ================= */}
@@ -1117,32 +1099,25 @@ export default function EventDetailView({ initialEvent }: EventDetailViewProps) 
 
               <div className="space-y-1">
                 <div className="text-sm font-bold text-white">
-                  {isSaladStop
-                    ? 'Senayan City Mall'
-                    : event.locationType === 'online'
-                      ? 'Online Stream'
-                      : event.address || event.city || 'Event Location'}
+                  {event.locationType === 'online'
+                    ? 'Online Stream'
+                    : event.address || event.city || 'Event Location'}
                 </div>
                 <div className="text-xs text-white/60 leading-relaxed">
-                  {isSaladStop
-                    ? 'Jl. Asia Afrika No.19, RT.1/RW.3, Gelora, Kecamatan Tanah Abang, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10270, Indonesia'
-                    : event.locationType === 'online'
-                      ? 'Join from anywhere via web browser or phone.'
-                      : event.city
-                        ? `${event.address ? `${event.address}, ` : ''}${event.city}, ${event.region || 'Indonesia'}`
-                        : event.address || 'Address provided upon registration'}
+                  {event.locationType === 'online'
+                    ? 'Join from anywhere via web browser or phone.'
+                    : event.city
+                      ? `${event.address ? `${event.address}, ` : ''}${event.city}${event.region ? `, ${event.region}` : ''}`
+                      : event.address || 'Address provided upon registration'}
                 </div>
-                {isSaladStop && (
-                  <div className="text-xs text-white/70 pt-0.5">South Lobby Senayan City</div>
-                )}
               </div>
 
-              {/* Stylized Google Map Frame matching Screenshot (Only for offline events) */}
+              {/* Stylized Google Map Frame (Only for offline events) */}
               {event.locationType !== 'online' && (
                 <div className="w-full h-56 rounded-2xl overflow-hidden relative border border-white/10 shadow-lg mt-3 bg-[#111f12]">
                   <iframe
                     title="Event Location Map"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=106.786%2C-6.234%2C106.808%2C-6.220&layer=mapnik&marker=-6.2271953%2C106.7970117`}
+                    src={`https://maps.google.com/maps?q=${locationQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                     className="w-full h-full border-0 filter brightness-[0.92] contrast-[1.05]"
                     loading="lazy"
                   />

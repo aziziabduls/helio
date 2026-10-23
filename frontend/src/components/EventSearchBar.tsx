@@ -12,9 +12,31 @@ import { ArrowUpRight, Calendar, MapPin, Search, Sparkles, X } from 'lucide-reac
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function EventSearchBar() {
+export interface EventSearchBarProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideMobileTrigger?: boolean;
+}
+
+export default function EventSearchBar({
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  hideMobileTrigger = false,
+}: EventSearchBarProps = {}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? controlledOpen : internalOpen;
+
+  const setOpen = (value: boolean | ((prev: boolean) => boolean)) => {
+    const next = typeof value === 'function' ? value(open) : value;
+    if (isControlled) {
+      setControlledOpen?.(next);
+    } else {
+      setInternalOpen(next);
+    }
+  };
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<EventItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -63,14 +85,16 @@ export default function EventSearchBar() {
   return (
     <>
       {/* Mobile: Icon-only Search Trigger */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Search events"
-        className="sm:hidden text-sm text-white/70 hover:text-white p-2 focus:outline-none"
-      >
-        <Search className="w-5 h-5" />
-      </button>
+      {!hideMobileTrigger && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Search events"
+          className="sm:hidden text-sm text-white/70 hover:text-white p-2 focus:outline-none"
+        >
+          <Search className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Desktop: Full Search Trigger Button */}
       <div className="relative hidden sm:block">

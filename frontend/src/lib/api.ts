@@ -1,4 +1,22 @@
+import {
+  filterMockEvents,
+  findMockCalendarBySlug,
+  findMockEventBySlug,
+  getMockUser,
+  MOCK_CALENDARS,
+  MOCK_CATEGORIES,
+  MOCK_CITIES,
+  MOCK_EVENTS,
+  MOCK_HOSTS,
+} from './seedData';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4450/api';
+
+const isForceMock = () => process.env.NEXT_PUBLIC_FORCE_MOCK === 'true';
+const shouldFallbackToMock = () => {
+  if (isForceMock()) return true;
+  return process.env.NEXT_PUBLIC_ENABLE_MOCK_FALLBACK !== 'false';
+};
 
 export interface Host {
   id: string;
@@ -128,82 +146,180 @@ export async function fetchEvents(params?: {
   calendarSlug?: string;
   search?: string;
 }): Promise<EventItem[]> {
-  const query = new URLSearchParams();
-  if (params?.timeframe) query.append('timeframe', params.timeframe);
-  if (params?.category) query.append('category', params.category);
-  if (params?.city) query.append('city', params.city);
-  if (params?.calendarSlug) query.append('calendarSlug', params.calendarSlug);
-  if (params?.search) query.append('search', params.search);
+  if (!isForceMock()) {
+    try {
+      const query = new URLSearchParams();
+      if (params?.timeframe) query.append('timeframe', params.timeframe);
+      if (params?.category) query.append('category', params.category);
+      if (params?.city) query.append('city', params.city);
+      if (params?.calendarSlug) query.append('calendarSlug', params.calendarSlug);
+      if (params?.search) query.append('search', params.search);
 
-  const res = await fetch(`${API_BASE}/events?${query.toString()}`, { cache: 'no-store' });
-  const events = await handleResponse<EventItem[]>(res, 'Failed to fetch events');
-  if (params?.timeframe === 'past') return events;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return events.filter((e) => new Date(e.startAt) >= today);
+      const res = await fetch(`${API_BASE}/events?${query.toString()}`, { cache: 'no-store' });
+      const events = await handleResponse<EventItem[]>(res, 'Failed to fetch events');
+      if (params?.timeframe === 'past') return events;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return events.filter((e) => new Date(e.startAt) >= today);
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn('[Helio API] Backend offline, displaying seed data for events.');
+    }
+  }
+
+  return filterMockEvents(params);
 }
 
 export async function fetchEventBySlug(slug: string): Promise<EventItem> {
-  const res = await fetch(`${API_BASE}/events/${slug}`, { cache: 'no-store' });
-  return handleResponse<EventItem>(res, 'Failed to fetch event');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/events/${slug}`, { cache: 'no-store' });
+      return await handleResponse<EventItem>(res, 'Failed to fetch event');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn(`[Helio API] Backend offline, displaying seed data for event: ${slug}`);
+    }
+  }
+
+  const mock = findMockEventBySlug(slug);
+  if (mock) return mock;
+  throw new Error('Event not found in seed data');
 }
 
 export async function createEvent(data: any): Promise<EventItem> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!isForceMock()) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_BASE}/events`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+      return await handleResponse<EventItem>(res, 'Failed to create event');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
   }
 
-  const res = await fetch(`${API_BASE}/events`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(data),
-  });
-  return handleResponse<EventItem>(res, 'Failed to create event');
+  const newEvt: EventItem = {
+    id: `evt-${Date.now()}`,
+    slug: data.slug || `event-${Date.now()}`,
+    name: data.name || 'New Community Event',
+    description: data.description || '',
+    coverUrl: data.coverUrl || 'https://images.lumacdn.com/uploads/ul/347bf4cf-3703-4559-9b27-c3ffc37e1dd7.png',
+    startAt: data.startAt || new Date().toISOString(),
+    endAt: data.endAt || new Date().toISOString(),
+    timezone: data.timezone || 'UTC',
+    locationType: data.locationType || 'offline',
+    address: data.address,
+    city: data.city || 'San Francisco',
+    requireApproval: Boolean(data.requireApproval),
+    category: data.category || ['#Tech'],
+    tintColor: data.tintColor || '#2e72e0',
+    host: MOCK_HOSTS.alexa,
+    tickets: data.tickets || [],
+  };
+  MOCK_EVENTS.unshift(newEvt);
+  return newEvt;
 }
 
 export async function updateEvent(slugOrId: string, data: any): Promise<EventItem> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!isForceMock()) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_BASE}/events/${encodeURIComponent(slugOrId)}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(data),
+      });
+      return await handleResponse<EventItem>(res, 'Failed to update event');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
   }
 
-  const res = await fetch(`${API_BASE}/events/${encodeURIComponent(slugOrId)}`, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify(data),
-  });
-  return handleResponse<EventItem>(res, 'Failed to update event');
+  const existing = findMockEventBySlug(slugOrId);
+  if (existing) {
+    Object.assign(existing, data);
+    return existing;
+  }
+  throw new Error('Event not found');
 }
 
 export async function registerForEvent(
   eventId: string,
   payload: { name: string; email: string; ticketId?: string; notes?: string; answers?: any }
 ): Promise<Registration> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!isForceMock()) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_BASE}/events/${eventId}/register`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      return await handleResponse<Registration>(res, 'Failed to register');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
   }
 
-  const res = await fetch(`${API_BASE}/events/${eventId}/register`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<Registration>(res, 'Failed to register');
+  return {
+    id: `reg-mock-${Date.now()}`,
+    eventId,
+    ticketId: payload.ticketId,
+    name: payload.name,
+    email: payload.email,
+    status: 'APPROVED',
+    ticketKey: `helio-mock-pass-${Date.now()}`,
+    qrCode: '',
+    notes: payload.notes,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 export async function fetchCalendars(): Promise<Calendar[]> {
-  const res = await fetch(`${API_BASE}/calendars`, { cache: 'no-store' });
-  return handleResponse<Calendar[]>(res, 'Failed to fetch calendars');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/calendars`, { cache: 'no-store' });
+      return await handleResponse<Calendar[]>(res, 'Failed to fetch calendars');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn('[Helio API] Backend offline, displaying seed data for calendars.');
+    }
+  }
+  return MOCK_CALENDARS;
 }
 
 export async function fetchCalendarBySlug(slug: string): Promise<Calendar & { events: EventItem[]; owner: Host }> {
-  const res = await fetch(`${API_BASE}/calendars/${slug}`, { cache: 'no-store' });
-  return handleResponse<Calendar & { events: EventItem[]; owner: Host }>(res, 'Failed to fetch calendar');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/calendars/${slug}`, { cache: 'no-store' });
+      return await handleResponse<Calendar & { events: EventItem[]; owner: Host }>(res, 'Failed to fetch calendar');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn(`[Helio API] Backend offline, displaying seed data for calendar: ${slug}`);
+    }
+  }
+
+  const mock = findMockCalendarBySlug(slug);
+  if (mock) return mock;
+  throw new Error('Calendar not found in seed data');
 }
 
 export async function createCalendar(payload: {
@@ -214,18 +330,38 @@ export async function createCalendar(payload: {
   coverUrl?: string;
   tintColor?: string;
 }): Promise<Calendar> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!isForceMock()) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_BASE}/calendars`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      return await handleResponse<Calendar>(res, 'Failed to create calendar');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
   }
 
-  const res = await fetch(`${API_BASE}/calendars`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<Calendar>(res, 'Failed to create calendar');
+  const newCal: Calendar = {
+    id: `cal-${Date.now()}`,
+    slug: payload.slug || `cal-${Date.now()}`,
+    name: payload.name,
+    description: payload.description,
+    avatarUrl: payload.avatarUrl,
+    coverUrl: payload.coverUrl,
+    tintColor: payload.tintColor || '#4286f5',
+    subscriberCount: 1,
+    owner: MOCK_HOSTS.alexa,
+  };
+  MOCK_CALENDARS.unshift(newCal);
+  return newCal;
 }
 
 export async function updateCalendar(
@@ -239,18 +375,31 @@ export async function updateCalendar(
     tintColor?: string;
   }
 ): Promise<Calendar & { owner?: Host }> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+  if (!isForceMock()) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('helio_auth_token') || localStorage.getItem('helio_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`${API_BASE}/calendars/${encodeURIComponent(slug)}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      return await handleResponse<Calendar & { owner?: Host }>(res, 'Failed to update calendar');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
   }
 
-  const res = await fetch(`${API_BASE}/calendars/${encodeURIComponent(slug)}`, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<Calendar & { owner?: Host }>(res, 'Failed to update calendar');
+  const cal = MOCK_CALENDARS.find((c) => c.slug === slug);
+  if (cal) {
+    Object.assign(cal, payload);
+    return { ...cal, owner: MOCK_HOSTS.alexa };
+  }
+  throw new Error('Calendar not found');
 }
 
 export interface CategoryItem {
@@ -271,18 +420,54 @@ export interface CityItem {
 }
 
 export async function fetchCategories(): Promise<CategoryItem[]> {
-  const res = await fetch(`${API_BASE}/categories`, { cache: 'no-store' });
-  return handleResponse<CategoryItem[]>(res, 'Failed to fetch categories');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/categories`, { cache: 'no-store' });
+      return await handleResponse<CategoryItem[]>(res, 'Failed to fetch categories');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn('[Helio API] Backend offline, displaying seed data for categories.');
+    }
+  }
+  return MOCK_CATEGORIES;
 }
 
 export async function fetchCities(): Promise<CityItem[]> {
-  const res = await fetch(`${API_BASE}/cities`, { cache: 'no-store' });
-  return handleResponse<CityItem[]>(res, 'Failed to fetch cities');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/cities`, { cache: 'no-store' });
+      return await handleResponse<CityItem[]>(res, 'Failed to fetch cities');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn('[Helio API] Backend offline, displaying seed data for cities.');
+    }
+  }
+  return MOCK_CITIES;
 }
 
 export async function fetchGuests(eventId: string): Promise<Registration[]> {
-  const res = await fetch(`${API_BASE}/events/${eventId}/guests`, { cache: 'no-store' });
-  return handleResponse<Registration[]>(res, 'Failed to fetch guests');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/events/${eventId}/guests`, { cache: 'no-store' });
+      return await handleResponse<Registration[]>(res, 'Failed to fetch guests');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
+  }
+
+  const event = findMockEventBySlug(eventId);
+  return (
+    event?.registrations?.map((r, i) => ({
+      id: r.id,
+      eventId: event.id,
+      name: r.name,
+      email: `${r.name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+      status: 'APPROVED' as const,
+      ticketKey: `seed-ticket-${i}`,
+      createdAt: new Date().toISOString(),
+      user: r.user,
+    })) || []
+  );
 }
 
 export async function updateRegistrationStatus(id: string, status: string): Promise<Registration> {
@@ -307,47 +492,97 @@ export interface UserProfile extends Host {
 }
 
 export async function loginUser(payload: { email: string; password?: string }): Promise<{ user: UserProfile; token: string }> {
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<{ user: UserProfile; token: string }>(res, 'Failed to log in');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await handleResponse<{ user: UserProfile; token: string }>(res, 'Failed to log in');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn('[Helio API] Backend offline, using mock user session.');
+    }
+  }
+
+  const mockUser = getMockUser();
+  mockUser.email = payload.email;
+  return { user: mockUser, token: 'helio-mock-token-offline' };
 }
 
 export async function signupUser(payload: { name: string; email: string; password?: string }): Promise<{ user: UserProfile; token: string }> {
-  const res = await fetch(`${API_BASE}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<{ user: UserProfile; token: string }>(res, 'Failed to sign up');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return await handleResponse<{ user: UserProfile; token: string }>(res, 'Failed to sign up');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn('[Helio API] Backend offline, using mock user session.');
+    }
+  }
+
+  const mockUser = getMockUser();
+  mockUser.name = payload.name;
+  mockUser.email = payload.email;
+  return { user: mockUser, token: 'helio-mock-token-offline' };
 }
 
 export async function fetchMe(token: string): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  return handleResponse<UserProfile>(res, 'Failed to fetch current user profile');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      return await handleResponse<UserProfile>(res, 'Failed to fetch current user profile');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
+  }
+
+  return getMockUser();
 }
 
 export async function updateProfile(token: string, payload: Partial<UserProfile>): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/auth/profile`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse<UserProfile>(res, 'Failed to update profile');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      return await handleResponse<UserProfile>(res, 'Failed to update profile');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+    }
+  }
+
+  const user = getMockUser();
+  Object.assign(user, payload);
+  return user;
 }
 
 export async function fetchUserByUsername(username: string): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/users/${encodeURIComponent(username)}`, {
-    cache: 'no-store',
-  });
-  return handleResponse<UserProfile>(res, 'Failed to fetch user profile');
+  if (!isForceMock()) {
+    try {
+      const res = await fetch(`${API_BASE}/users/${encodeURIComponent(username)}`, {
+        cache: 'no-store',
+      });
+      return await handleResponse<UserProfile>(res, 'Failed to fetch user profile');
+    } catch (err) {
+      if (!shouldFallbackToMock()) throw err;
+      console.warn(`[Helio API] Backend offline, displaying seed data for user: ${username}`);
+    }
+  }
+
+  return getMockUser(username);
 }
 

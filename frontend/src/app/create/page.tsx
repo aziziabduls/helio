@@ -30,10 +30,12 @@ import {
   Image as ImageIcon,
   MapPin,
   Plus,
+  Sparkles,
   Trash2,
   Upload,
   X
 } from 'lucide-react';
+import { extractDominantColorFromImage } from '@/lib/colorExtractor';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
@@ -169,16 +171,9 @@ const TICKET_TYPES = [
 ];
 
 function getPalette(hex?: string | null) {
-  if (!hex || !hex.startsWith('#')) {
-    return {
-      pageBg: '#0e1626',
-      cardBg: '#162238',
-      squircleBg: '#142034',
-      cardBorder: 'rgba(56, 110, 200, 0.25)',
-      footerBorder: '#1c2d4a',
-    };
-  }
-  let c = hex.replace('#', '');
+  const fallbackHex = '#0e1626';
+  const effectiveHex = hex && hex.startsWith('#') ? hex : fallbackHex;
+  let c = effectiveHex.replace('#', '');
   if (c.length === 3) c = c.split('').map((x) => x + x).join('');
   const r = parseInt(c.substring(0, 2), 16) / 255;
   const g = parseInt(c.substring(2, 4), 16) / 255;
@@ -205,14 +200,23 @@ function getPalette(hex?: string | null) {
     h /= 6;
   }
   const deg = Math.round(h * 360);
-  const sat = Math.round(s * 45);
+  const sat = Math.round(s * 100);
+
+  // If hex is already a dark tone (l <= 0.20), use the exact hex directly
+  const isAlreadyDark = l <= 0.20;
+  const pageBg = isAlreadyDark ? effectiveHex : `hsl(${deg}, ${sat}%, 11%)`;
+  const cardLightness = isAlreadyDark ? Math.min(22, Math.round(l * 100) + 4) : 15;
+  const cardBg = `hsl(${deg}, ${Math.round(sat * 0.85)}%, ${cardLightness}%)`;
+  const squircleBg = `hsl(${deg}, ${Math.round(sat * 0.8)}%, ${Math.max(10, cardLightness - 2)}%)`;
+  const cardBorder = `hsla(${deg}, ${sat}%, 35%, 0.25)`;
+  const footerBorder = `hsla(${deg}, ${sat}%, 25%, 0.35)`;
 
   return {
-    pageBg: `hsl(${deg}, ${sat}%, 11%)`,
-    cardBg: `hsl(${deg}, ${sat}%, 15%)`,
-    squircleBg: `hsl(${deg}, ${sat}%, 13%)`,
-    cardBorder: `hsla(${deg}, ${sat}%, 30%, 0.3)`,
-    footerBorder: `hsla(${deg}, ${sat}%, 22%, 0.4)`,
+    pageBg,
+    cardBg,
+    squircleBg,
+    cardBorder,
+    footerBorder,
   };
 }
 
@@ -259,6 +263,7 @@ function CreateEventForm() {
 
   // Theme & Font
   const [tintColor, setTintColor] = useState('#152614');
+  const [isAutoColor, setIsAutoColor] = useState(!isEditMode);
   const [font, setFont] = useState('sans');
   const [isThemePickerOpen, setIsThemePickerOpen] = useState(false);
 
@@ -364,7 +369,10 @@ function CreateEventForm() {
           setCategories([]);
         }
         if (evt.coverUrl) setCoverUrl(evt.coverUrl);
-        if (evt.tintColor) setTintColor(evt.tintColor);
+        if (evt.tintColor) {
+          setTintColor(evt.tintColor);
+          setIsAutoColor(false);
+        }
         if (evt.font) setFont(evt.font);
         if (evt.host?.avatarUrl) setHostAvatar(evt.host.avatarUrl);
         if (evt.locationType) setLocationType(evt.locationType as any);
@@ -423,6 +431,16 @@ function CreateEventForm() {
         setIsLoadingEdit(false);
       });
   }, [editSlug, router]);
+
+  // Auto-extract dominant color from cover image when in auto mode
+  useEffect(() => {
+    if (!isAutoColor || !coverUrl) return;
+    extractDominantColorFromImage(coverUrl, (hex) => {
+      if (hex) {
+        setTintColor(hex);
+      }
+    });
+  }, [coverUrl, isAutoColor]);
 
   // Load calendars from API (default to empty/no calendar unless user chooses or creates one)
   useEffect(() => {
@@ -795,9 +813,9 @@ function CreateEventForm() {
     >
       {/* ================= STICKY TOP NAVIGATION & TOOLBAR ================= */}
       <div
-        className="sticky top-11 z-40 w-full backdrop-blur-md transition-colors duration-200 py-3 sm:py-2 border-b border-white/[0.06]"
+        className="sticky top-11 z-40 w-full backdrop-blur-lg transition-colors duration-200 py-3 sm:py-2"
         style={{
-          backgroundColor: `color-mix(in srgb, ${pageBg} 85%, transparent)`,
+          backgroundColor: `color-mix(in srgb, ${pageBg} 60%, transparent)`,
         }}
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -863,12 +881,42 @@ function CreateEventForm() {
                         onClick={() => setIsThemePickerOpen(false)}
                       />
                     </div>
+
+                    {/* Auto from Cover Image Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAutoColor(true);
+                        if (coverUrl) {
+                          extractDominantColorFromImage(coverUrl, (hex) => {
+                            if (hex) setTintColor(hex);
+                          });
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all ${
+                        isAutoColor
+                          ? 'bg-blue-600/20 border border-blue-500/40 text-blue-200 font-medium'
+                          : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white/80'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Auto from Image</span>
+                      </div>
+                      {isAutoColor && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/30 text-blue-300 font-semibold">
+                          Active
+                        </span>
+                      )}
+                    </button>
+
                     <div className="grid grid-cols-3 gap-2">
                       {PRESET_TINTS.map((t) => (
                         <button
                           key={t.hex}
                           type="button"
                           onClick={() => {
+                            setIsAutoColor(false);
                             setTintColor(t.hex);
                             setIsThemePickerOpen(false);
                           }}
@@ -876,7 +924,7 @@ function CreateEventForm() {
                           title={t.name}
                         >
                           <div
-                            className={`w-7 h-7 rounded-full ring-2 transition-transform ${tintColor === t.hex ? 'ring-white scale-110 shadow-lg' : 'ring-white/20 group-hover:scale-105'
+                            className={`w-7 h-7 rounded-full ring-2 transition-transform ${!isAutoColor && tintColor === t.hex ? 'ring-white scale-110 shadow-lg' : 'ring-white/20 group-hover:scale-105'
                               }`}
                             style={{ backgroundColor: t.hex }}
                           />
@@ -894,7 +942,10 @@ function CreateEventForm() {
                         <input
                           type="color"
                           value={tintColor}
-                          onChange={(e) => setTintColor(e.target.value)}
+                          onChange={(e) => {
+                            setIsAutoColor(false);
+                            setTintColor(e.target.value);
+                          }}
                           className="w-6 h-6 rounded cursor-pointer bg-transparent border-0"
                         />
                         <span className="text-[11px] font-mono text-white/90">{tintColor}</span>
