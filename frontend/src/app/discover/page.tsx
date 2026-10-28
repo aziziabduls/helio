@@ -16,9 +16,7 @@ import {
 import {
   ArrowRight,
   Check,
-  MapPin,
-  Plus,
-  Sparkles
+  Plus
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -281,7 +279,7 @@ export default function DiscoverPage() {
       <section className="space-y-6">
         <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
+            {/* <Sparkles className="w-5 h-5 text-amber-400" /> */}
             <h2 className="text-xl font-bold tracking-tight text-white">Featured Calendars</h2>
           </div>
         </div>
@@ -362,7 +360,7 @@ export default function DiscoverPage() {
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-black/[0.08] dark:border-white/[0.08]">
           <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+            {/* <MapPin className="w-5 h-5 text-emerald-500 dark:text-emerald-400" /> */}
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Explore Local Events
             </h2>

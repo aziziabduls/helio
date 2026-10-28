@@ -145,6 +145,8 @@ export async function fetchEvents(params?: {
   city?: string;
   calendarSlug?: string;
   search?: string;
+  page?: number;
+  perPage?: number;
 }): Promise<EventItem[]> {
   if (!isForceMock()) {
     try {
@@ -154,6 +156,8 @@ export async function fetchEvents(params?: {
       if (params?.city) query.append('city', params.city);
       if (params?.calendarSlug) query.append('calendarSlug', params.calendarSlug);
       if (params?.search) query.append('search', params.search);
+      if (params?.page) query.append('page', String(params.page));
+      if (params?.perPage) query.append('perPage', String(params.perPage));
 
       const res = await fetch(`${API_BASE}/events?${query.toString()}`, { cache: 'no-store' });
       const events = await handleResponse<EventItem[]>(res, 'Failed to fetch events');

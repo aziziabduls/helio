@@ -1,34 +1,36 @@
 'use client';
 
 import EventCard from '@/components/EventCard';
-import GradientWaves from '@/components/GradientWaves';
-import Grainient from '@/components/Grainient';
-import LightRays from '@/components/LightRays';
 import SpecularButton from '@/components/SpecularButton';
 import { useAuth } from '@/context/AuthContext';
 import { EventItem, fetchEvents } from '@/lib/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Compass, Plus, Sparkles, Ticket, Users } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+
+const GradientWaves = dynamic(() => import('@/components/GradientWaves'), { ssr: false });
+const Grainient = dynamic(() => import('@/components/Grainient'), { ssr: false });
+const LightRays = dynamic(() => import('@/components/LightRays'), { ssr: false });
 
 const WORDS = [
   {
     text: 'Delightful',
-    className: "font-['Playfair_Display',serif] italic font-normal tracking-tighter text-pink-300 dark:text-pink-200",
+    className: "font-[family-name:var(--font-serif)] italic font-normal tracking-tighter text-pink-300 dark:text-pink-200",
   },
   {
     text: 'Vivid',
-    className: "font-['Space_Grotesk',sans-serif] font-bold tracking-tighter bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent",
+    className: "font-[family-name:var(--font-grotesk)] font-bold tracking-tighter bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent",
   },
   {
     text: 'Stellar',
-    className: "font-['JetBrains_Mono',monospace] font-semibold tracking-tighter text-blue-400 dark:text-blue-300",
+    className: "font-[family-name:var(--font-mono)] font-semibold tracking-tighter text-blue-400 dark:text-blue-300",
   },
   {
     text: 'Lovely',
-    className: "font-['Cinzel',serif] uppercase font-bold tracking-tighter text-emerald-300 dark:text-emerald-200 text-[0.88em]",
+    className: "font-[family-name:var(--font-cinzel)] uppercase font-bold tracking-tighter text-emerald-300 dark:text-emerald-200 text-[0.88em]",
   },
 ];
 
@@ -36,8 +38,8 @@ export default function LandingPage() {
   const router = useRouter();
   const { user, openAuthModal } = useAuth();
   const [wordIndex, setWordIndex] = useState(0);
-  const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('waves');
-  // const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('grainient');
+  // const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('waves');
+  const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('grainient');
   // const [heroEffect, setHeroEffect] = useState<'grainient' | 'lightrays' | 'waves'>('lightrays');
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,7 @@ export default function LandingPage() {
   // Fetch top upcoming events for live preview
   useEffect(() => {
     let active = true;
-    fetchEvents({ timeframe: 'upcoming' })
+    fetchEvents({ timeframe: 'upcoming', perPage: 4 })
       .then((data) => {
         if (active) {
           setEvents(data.slice(0, 4));
@@ -90,40 +92,42 @@ export default function LandingPage() {
     <div className="relative overflow-hidden min-h-screen -mt-11">
       {/* Hero Backdrop (Switchable between Grainient, LightRays, and GradientWaves) */}
       <div className="pointer-events-none absolute inset-x-0 top-0 w-full h-[100dvh] overflow-hidden z-0 opacity-50 [mask-image:radial-gradient(ellipse_100%_80%_at_50%_40%,#000_30%,transparent_100%)]">
-        {heroEffect === 'grainient' ? (
-          <Grainient
-            colors={['#0b0e14', '#180d2b', '#3b1261', '#6d28d9', '#a855f7', '#e9d5ff']}
-            angle={55}
-            flow={0.8}
-            silk={0.35}
-            grainAmount={0.08}
-          />
-        ) : heroEffect === 'lightrays' ? (
-          <LightRays
-            raysOrigin="top-center"
-            raysColor="#7c3aed"
-            raysSpeed={1}
-            lightSpread={0.4}
-            rayLength={3}
-            glow={0.65}
-            haze={0.25}
-            followMouse
-            mouseInfluence={0.1}
-            saturation={0.85}
-          />
-        ) : (
-          <GradientWaves
-            horizonColor="#8b5cf6"
-            waveColor="#e879f9"
-            crestColor="#f5d0fe"
-            speed={0.4}
-            amplitude={2.5}
-            relief={1}
-            lightAngle={120}
-            mouseInteraction
-            swellOnClick
-          />
-        )}
+        <Suspense fallback={null}>
+          {heroEffect === 'grainient' ? (
+            <Grainient
+              colors={['#0b0e14', '#180d2b', '#3b1261', '#6d28d9', '#a855f7', '#e9d5ff']}
+              angle={55}
+              flow={0.8}
+              silk={0.35}
+              grainAmount={0.08}
+            />
+          ) : heroEffect === 'lightrays' ? (
+            <LightRays
+              raysOrigin="top-center"
+              raysColor="#7c3aed"
+              raysSpeed={1}
+              lightSpread={0.4}
+              rayLength={3}
+              glow={0.65}
+              haze={0.25}
+              followMouse
+              mouseInfluence={0.1}
+              saturation={0.85}
+            />
+          ) : (
+            <GradientWaves
+              horizonColor="#8b5cf6"
+              waveColor="#e879f9"
+              crestColor="#f5d0fe"
+              speed={0.4}
+              amplitude={2.5}
+              relief={1}
+              lightAngle={120}
+              mouseInteraction
+              swellOnClick
+            />
+          )}
+        </Suspense>
       </div>
 
       {/* Hero Section */}
@@ -259,6 +263,7 @@ export default function LandingPage() {
 
           <Link
             href="/events"
+            aria-label="View all events"
             className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors flex items-center gap-1"
           >
             <span className='hidden sm:block'>View all</span>

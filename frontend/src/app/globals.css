@@ -1,23 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 .font-style-sans {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+  font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
 }
 
 .font-style-serif {
-  font-family: 'Playfair Display', Georgia, serif !important;
+  font-family: var(--font-serif), 'Playfair Display', Georgia, serif !important;
 }
 
 .font-style-mono {
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace !important;
 }
 
 .font-style-grotesk {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: var(--font-grotesk), 'Space Grotesk', system-ui, sans-serif !important;
 }
 
 @layer base {

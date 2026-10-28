@@ -66,6 +66,10 @@ export default function EventCard({ event }: EventCardProps) {
               <img
                 src={event.host.avatarUrl}
                 alt={event.host.name}
+                loading="lazy"
+                decoding="async"
+                width={16}
+                height={16}
                 className="w-4 h-4 rounded-full object-cover"
               />
             ) : (
@@ -75,11 +79,11 @@ export default function EventCard({ event }: EventCardProps) {
             )}
             <span className="truncate">By {event.host.name}</span>
             {event.calendar && (
-              <span className="text-white/40 truncate">
+              <span className="text-white/60 truncate">
                 in{' '}
                 <Link
                   href={`/calendar/${event.calendar.slug}`}
-                  className="text-white/70 hover:text-blue-400 hover:underline transition-colors"
+                  className="text-white/80 hover:text-blue-400 hover:underline transition-colors"
                 >
                   {event.calendar.name}
                 </Link>
@@ -89,7 +93,7 @@ export default function EventCard({ event }: EventCardProps) {
 
           {/* Location */}
           <div className="flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-white/40 flex-shrink-0" />
+            <MapPin className="w-3.5 h-3.5 text-white/60 flex-shrink-0" />
             <span className="truncate">
               {event.locationType === 'online'
                 ? 'Online Event'
@@ -101,7 +105,7 @@ export default function EventCard({ event }: EventCardProps) {
         </div>
 
         {/* Bottom stats & Manage link */}
-        <div className="mt-4 pt-3 flex items-center justify-between text-xs text-white/40">
+        <div className="mt-4 pt-3 flex items-center justify-between text-xs text-white/60">
           <div className="flex items-center gap-2">
             {attendees.length > 0 ? (
               <div className="flex items-center -space-x-1.5">
@@ -116,6 +120,10 @@ export default function EventCard({ event }: EventCardProps) {
                         <img
                           src={a.user.avatarUrl}
                           alt={a.name}
+                          loading="lazy"
+                          decoding="async"
+                          width={20}
+                          height={20}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -144,8 +152,9 @@ export default function EventCard({ event }: EventCardProps) {
           {isOwner && (
             <Link
               href={`/manage/${event.slug}`}
-              className="flex items-center gap-1 text-white/50 hover:text-white transition-colors"
+              className="flex items-center gap-1 text-white/70 hover:text-white transition-colors"
               title="Host Dashboard & Guest List"
+              aria-label="Host Dashboard and Guest List"
             >
               <Settings className="w-3.5 h-3.5" />
               <span>Manage</span>
@@ -161,8 +170,12 @@ export default function EventCard({ event }: EventCardProps) {
       >
         {/* coverCardUrl yg square, untuk tampilan card */}
         <img
-          src={event.coverUrl}
+          src={event.coverCardUrl || event.coverUrl}
           alt={event.name}
+          loading="lazy"
+          decoding="async"
+          width={128}
+          height={170}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
       </Link>

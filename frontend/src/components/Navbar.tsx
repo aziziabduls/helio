@@ -138,6 +138,7 @@ export default function Navbar() {
         <div className="flex items-center justify-end gap-4 sm:gap-4 flex-shrink-0">
           <Link
             href="/events"
+            aria-label="Events"
             className={`sm:hidden text-sm flex-shrink-0 transition-colors ${pathname === '/events' ? 'text-white' : 'text-white/70 hover:text-white'
               }`}
           >
@@ -146,6 +147,7 @@ export default function Navbar() {
 
           <Link
             href="/discover"
+            aria-label="Discover"
             className={`sm:hidden text-sm flex-shrink-0 transition-colors ${pathname === '/discover' ? 'text-white' : 'text-white/70 hover:text-white'
               }`}
           >

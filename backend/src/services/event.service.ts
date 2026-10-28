@@ -114,9 +114,11 @@ export class EventService {
       ];
     }
 
-    const isPaginated = page && perPage && page > 0 && perPage > 0;
-    const skip = isPaginated ? (page - 1) * perPage : undefined;
-    const take = isPaginated ? perPage : undefined;
+    const pageNum = page && page > 0 ? page : 1;
+    const perPageNum = perPage && perPage > 0 ? perPage : undefined;
+    const isPaginated = Boolean(perPageNum);
+    const skip = perPageNum ? (pageNum - 1) * perPageNum : undefined;
+    const take = perPageNum;
 
     const [events, total] = await Promise.all([
       prisma.event.findMany({
@@ -159,7 +161,6 @@ export class EventService {
               saleEndAt: true,
             },
           },
-          merchandises: true,
           registrations: {
             where: { status: { in: ['APPROVED', 'CHECKED_IN'] } },
             orderBy: { createdAt: 'desc' },
@@ -184,12 +185,12 @@ export class EventService {
       isPaginated ? prisma.event.count({ where: whereClause }) : Promise.resolve(0),
     ]);
 
-    const meta = isPaginated
+    const meta = isPaginated && perPageNum
       ? {
-        page,
-        perPage,
+        page: pageNum,
+        perPage: perPageNum,
         total,
-        totalPages: Math.ceil(total / perPage),
+        totalPages: Math.ceil(total / perPageNum),
       }
       : null;
 
